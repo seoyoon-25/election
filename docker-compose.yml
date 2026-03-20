@@ -1,0 +1,108 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: campaign-os-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: campaign_os
+      POSTGRES_PASSWORD: campaign_os
+      POSTGRES_DB: campaign_os
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Use 5433 on host to avoid conflict with local postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campaign_os -d campaign_os"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: campaign-os-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6380:6379"  # Use 6380 on host to avoid conflict with local redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campaign-os-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override database URL to use Docker service name
+      DATABASE_URL: postgresql://campaign_os:campaign_os@postgres:5432/campaign_os
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot-reload during development
+      - ./backend/app:/app/app:ro
+      - ./backend/alembic:/app/alembic:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: campaign-os-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: https://election.bestcome.org/api/v1
+      NEXT_PUBLIC_SITE_URL: https://election.bestcome.org
+      NEXT_PUBLIC_APP_NAME: Campaign OS
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      # Mount source code for hot-reload during development
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    depends_on:
+      - backend
+
+  # MinIO S3-compatible storage (optional, for file uploads)
+  minio:
+    image: minio/minio:latest
+    container_name: campaign-os-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
