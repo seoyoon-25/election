@@ -7,7 +7,7 @@ import { getMyCampaigns, isAuthenticated } from "@/lib/auth";
 import { CampaignMembership } from "@/types";
 import { Card, CardTitle, Badge, Button } from "@/components/ui";
 import { Header } from "@/components/layout";
-import { ChevronRight, Building2 } from "lucide-react";
+import { ChevronRight, Building2, Plus, Mail } from "lucide-react";
 
 export default function CampaignsPage() {
   const router = useRouter();
@@ -47,9 +47,17 @@ export default function CampaignsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="max-w-4xl mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">내 캠프</h1>
-          <p className="text-gray-600 mt-1">관리할 캠프를 선택하세요</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">내 캠프</h1>
+            <p className="text-gray-600 mt-1">관리할 캠프를 선택하세요</p>
+          </div>
+          <Link href="/campaigns/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              새 캠프 만들기
+            </Button>
+          </Link>
         </div>
 
         {error && (
@@ -59,12 +67,27 @@ export default function CampaignsPage() {
         )}
 
         {memberships.length === 0 ? (
-          <Card padding="lg" className="text-center">
-            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <CardTitle>캠프가 없습니다</CardTitle>
-            <p className="text-gray-600 mt-2">
-              아직 참여 중인 캠프가 없습니다.
+          <Card padding="lg" className="text-center py-12">
+            <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-6" />
+            <CardTitle className="text-xl">참여 중인 캠프가 없습니다</CardTitle>
+            <p className="text-gray-600 mt-3 mb-8 max-w-md mx-auto">
+              새 캠프를 만들어 선거 운동을 시작하거나,<br />
+              다른 캠프의 초대를 기다리세요.
             </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/campaigns/new">
+                <Button size="lg">
+                  <Plus className="w-5 h-5 mr-2" />
+                  캠프 만들기
+                </Button>
+              </Link>
+            </div>
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <Mail className="w-4 h-4" />
+                <span>초대 이메일을 받으셨나요? 이메일의 링크를 클릭하세요</span>
+              </div>
+            </div>
           </Card>
         ) : (
           <div className="space-y-4">
