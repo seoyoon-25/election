@@ -396,8 +396,16 @@ class ApprovalService:
         page_size: int = 20,
     ) -> tuple[list[ApprovalRequest], int]:
         """List approval requests with filtering."""
-        query = select(ApprovalRequest).where(
-            ApprovalRequest.campaign_id == campaign_id
+        # Base query with eager loading to prevent N+1 queries
+        query = (
+            select(ApprovalRequest)
+            .options(
+                selectinload(ApprovalRequest.workflow).selectinload(
+                    ApprovalWorkflow.steps
+                ),
+                selectinload(ApprovalRequest.step_decisions),
+            )
+            .where(ApprovalRequest.campaign_id == campaign_id)
         )
 
         if filters.status:
@@ -411,10 +419,22 @@ class ApprovalService:
         if filters.workflow_id:
             query = query.where(ApprovalRequest.workflow_id == filters.workflow_id)
 
-        # Count total
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
+        # Count total (without options for efficiency)
+        count_query = select(func.count()).select_from(
+            select(ApprovalRequest.id)
+            .where(ApprovalRequest.campaign_id == campaign_id)
+            .subquery()
         )
+        if filters.status:
+            count_query = select(func.count()).select_from(
+                select(ApprovalRequest.id)
+                .where(
+                    ApprovalRequest.campaign_id == campaign_id,
+                    ApprovalRequest.status == filters.status,
+                )
+                .subquery()
+            )
+        count_result = await self.db.execute(count_query)
         total = count_result.scalar() or 0
 
         # Paginate

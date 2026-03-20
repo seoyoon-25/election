@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LogOut, User, Menu, X, Home, LayoutDashboard, ClipboardList, Calendar, FileText, Users, Settings } from "lucide-react";
+import { LogOut, User, Menu, X, Home, LayoutDashboard, ClipboardList, Calendar, FileText, Users, Settings, Shield } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
-  user?: { full_name: string; email: string } | null;
+  user?: { full_name: string; email: string; is_superadmin?: boolean } | null;
 }
 
 export function Header({ user }: HeaderProps) {
@@ -65,6 +65,14 @@ export function Header({ user }: HeaderProps) {
 
           {user && (
             <div className="flex items-center gap-2 md:gap-4">
+              {user.is_superadmin && (
+                <Link href="/admin">
+                  <Button variant="outline" size="sm">
+                    <Shield className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">관리자</span>
+                  </Button>
+                </Link>
+              )}
               <div className="hidden sm:flex items-center text-sm text-gray-600">
                 <User className="h-4 w-4 mr-2" />
                 {user.full_name}

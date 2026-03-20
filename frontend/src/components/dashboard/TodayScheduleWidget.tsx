@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { Plus, ArrowRight, Calendar, MapPin, Clock } from "lucide-react";
 import {
@@ -30,7 +31,7 @@ interface TodayScheduleWidgetProps {
   onAddEvent?: () => void;
 }
 
-export function TodayScheduleWidget({
+export const TodayScheduleWidget = memo(function TodayScheduleWidget({
   events,
   isLoading,
   error,
@@ -112,9 +113,9 @@ export function TodayScheduleWidget({
       </CardContent>
     </Card>
   );
-}
+});
 
-function EventItem({
+const EventItem = memo(function EventItem({
   event,
   isFirst,
   onClick,
@@ -159,4 +160,4 @@ function EventItem({
       )}
     </div>
   );
-}
+});

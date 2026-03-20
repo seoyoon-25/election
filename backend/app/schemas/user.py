@@ -44,6 +44,7 @@ class UserResponse(UserBase, TimestampSchema):
     avatar_url: Optional[str] = None
     is_active: bool
     is_email_verified: bool = False
+    is_superadmin: bool = False
 
 
 class UserInDB(UserResponse):

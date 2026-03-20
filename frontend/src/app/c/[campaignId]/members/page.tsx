@@ -7,7 +7,7 @@ import { CampaignMembership } from "@/types";
 import { Card, CardTitle, Badge, Button } from "@/components/ui";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
 import { UserPlus, Users, Mail } from "lucide-react";
-import { format } from "date-fns";
+import { ErrorState } from "@/components/common/ErrorState";
 
 interface MemberWithUser extends CampaignMembership {
   user: {
@@ -23,21 +23,24 @@ export default function MembersPage() {
 
   const [members, setMembers] = useState<MemberWithUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMembers = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const response = await api.get<MemberWithUser[]>(
+        `/campaigns/${campaignId}/members`
+      );
+      setMembers(response || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "멤버 목록을 불러올 수 없습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const response = await api.get<MemberWithUser[]>(
-          `/campaigns/${campaignId}/members`
-        );
-        setMembers(response || []);
-      } catch (err) {
-        console.error("Failed to load members:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMembers();
   }, [campaignId]);
 
@@ -49,74 +52,89 @@ export default function MembersPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-gray-900">팀 멤버</h1>
+        <ErrorState
+          title="멤버 로드 실패"
+          message={error}
+          onRetry={fetchMembers}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Team Members</h1>
+        <h1 className="text-2xl font-bold text-gray-900">팀 멤버</h1>
         <Button>
           <UserPlus className="h-4 w-4 mr-1" />
-          Invite Member
+          멤버 초대
         </Button>
       </div>
 
       {members.length === 0 ? (
         <Card className="text-center py-12">
           <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <CardTitle>No team members</CardTitle>
+          <CardTitle>팀 멤버가 없습니다</CardTitle>
           <p className="text-gray-500 mt-2">
-            Invite members to join your campaign
+            캠프에 참여할 멤버를 초대하세요
           </p>
         </Card>
       ) : (
-        <Card padding="none">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center mr-3">
-                        <span className="text-primary-700 font-medium">
-                          {member.user.full_name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {member.user.full_name}
+        <Card className="p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table className="min-w-[600px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>멤버</TableHead>
+                  <TableHead>역할</TableHead>
+                  <TableHead>이메일</TableHead>
+                  <TableHead>관리</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center mr-3">
+                          <span className="text-primary-700 font-medium">
+                            {member.user.full_name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {member.user.full_name}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="blue">{member.role.name}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center text-gray-500">
-                      <Mail className="h-4 w-4 mr-2" />
-                      {member.user.email}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="secondary" size="sm">
-                      Edit Role
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="blue">{member.role.name}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center text-gray-500">
+                        <Mail className="h-4 w-4 mr-2" />
+                        {member.user.email}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="secondary" size="sm">
+                        역할 변경
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       )}
     </div>

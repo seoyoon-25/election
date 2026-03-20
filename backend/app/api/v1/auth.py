@@ -16,9 +16,14 @@ Handles:
 
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+# Rate limiter for auth endpoints
+limiter = Limiter(key_func=get_remote_address)
 
 from app.api.deps import get_db, get_current_user, get_current_user_optional
 from app.models import User
@@ -44,7 +49,7 @@ from app.services.auth_service import (
     UserNotFoundError,
 )
 from app.services.token_blacklist import blacklist_token, invalidate_all_user_tokens
-
+from app.core.logging import auth_logger
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -69,7 +74,9 @@ OptionalUser = Annotated[User | None, Depends(get_current_user_optional)]
     summary="Register a new user",
     description="Create a new user account with email and password.",
 )
+@limiter.limit("3/minute")
 async def register(
+    request: Request,
     data: RegisterRequest,
     auth_service: AuthServiceDep,
 ):
@@ -85,6 +92,7 @@ async def register(
     """
     try:
         user, tokens = await auth_service.register(data)
+        auth_logger.info(f"New user registered: {user.email}", extra={"user_id": user.id})
 
         return AuthResponse(
             user=UserResponse(
@@ -118,7 +126,9 @@ async def register(
     summary="Login",
     description="Authenticate with email and password to get access tokens.",
 )
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     data: LoginRequest,
     auth_service: AuthServiceDep,
 ):
@@ -132,6 +142,7 @@ async def login(
     """
     try:
         user, tokens = await auth_service.login(data)
+        auth_logger.info(f"User logged in: {user.email}", extra={"user_id": user.id})
 
         return AuthResponse(
             user=UserResponse(
@@ -153,11 +164,13 @@ async def login(
             ),
         )
     except InvalidCredentialsError as e:
+        auth_logger.warning(f"Failed login attempt for: {data.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.message,
         )
     except UserInactiveError as e:
+        auth_logger.warning(f"Inactive user login attempt: {data.email}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=e.message,
@@ -249,6 +262,7 @@ async def get_me(
         avatar_url=current_user.avatar_url,
         is_active=current_user.is_active,
         is_email_verified=current_user.is_email_verified,
+        is_superadmin=current_user.is_superadmin,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
     )
@@ -289,6 +303,7 @@ async def update_me(
         avatar_url=updated_user.avatar_url,
         is_active=updated_user.is_active,
         is_email_verified=updated_user.is_email_verified,
+        is_superadmin=updated_user.is_superadmin,
         created_at=updated_user.created_at,
         updated_at=updated_user.updated_at,
     )
@@ -336,7 +351,9 @@ async def change_password(
     summary="Request password reset",
     description="Request a password reset email.",
 )
+@limiter.limit("3/minute")
 async def request_password_reset(
+    request: Request,
     data: PasswordResetRequest,
     auth_service: AuthServiceDep,
 ):
@@ -353,12 +370,10 @@ async def request_password_reset(
     """
     token = await auth_service.request_password_reset(data.email)
 
-    # In production, send email and don't return the token
-    # For development, we return the token
+    # In production, send email with reset link
+    # TODO: Implement email sending
     return {
         "message": "If the email exists, a password reset link has been sent.",
-        # Remove this in production:
-        "debug_token": token,
     }
 
 
@@ -430,6 +445,7 @@ import secrets
 from urllib.parse import urlencode
 from fastapi.responses import RedirectResponse
 from app.config import get_settings
+from app.core.security import create_token_pair
 
 
 class GoogleOAuthStateStore:
@@ -591,7 +607,7 @@ async def google_oauth_callback(
             await db.commit()
 
         # Generate tokens
-        tokens = auth_service._generate_tokens(user.id)
+        tokens = create_token_pair(user.id)
 
         # Redirect with tokens
         params = urlencode({
@@ -656,7 +672,7 @@ async def google_oauth_callback(
     await db.commit()
 
     # Generate tokens
-    tokens = auth_service._generate_tokens(new_user.id)
+    tokens = create_token_pair(new_user.id)
 
     # Redirect with tokens
     params = urlencode({

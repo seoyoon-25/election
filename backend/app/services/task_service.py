@@ -390,7 +390,9 @@ class TaskService:
             .options(
                 selectinload(Task.column),
                 selectinload(Task.board),
-                selectinload(Task.assignments).selectinload(TaskAssignment.member),
+                selectinload(Task.created_by).selectinload(CampaignMembership.user),
+                selectinload(Task.assignments).selectinload(TaskAssignment.member).selectinload(CampaignMembership.user),
+                selectinload(Task.assignments).selectinload(TaskAssignment.assigned_by),
             )
             .where(*base_conditions)
         )
@@ -447,7 +449,14 @@ class TaskService:
         return result.scalar_one_or_none()
 
     async def create_task(self, board_id: int, data: TaskCreate) -> Task:
-        """Create a new task."""
+        """
+        Create a new task with assignees and history.
+
+        This is a multi-step operation wrapped in an explicit transaction
+        to ensure atomicity: either all steps succeed or none do.
+        """
+        from app.core.transaction import transaction
+
         board = await self.get_board(board_id)
         if not board:
             raise BoardNotFoundError()
@@ -456,37 +465,40 @@ class TaskService:
         if not column or column.board_id != board_id:
             raise ColumnNotFoundError()
 
-        # Get max sort order in column
-        max_order_result = await self.db.execute(
-            select(func.max(Task.sort_order))
-            .where(Task.column_id == data.column_id)
-        )
-        max_order = max_order_result.scalar() or -1
+        # Wrap multi-step creation in explicit transaction
+        async with transaction(self.db):
+            # Get max sort order in column
+            max_order_result = await self.db.execute(
+                select(func.max(Task.sort_order))
+                .where(Task.column_id == data.column_id)
+            )
+            max_order = max_order_result.scalar() or -1
 
-        task = Task(
-            campaign_id=self.campaign_id,
-            board_id=board_id,
-            column_id=data.column_id,
-            parent_id=data.parent_id,
-            title=data.title,
-            description=data.description,
-            priority=data.priority,
-            due_date=data.due_date,
-            sort_order=max_order + 1,
-            created_by_id=self.member.id,
-        )
-        self.db.add(task)
-        await self.db.flush()
+            task = Task(
+                campaign_id=self.campaign_id,
+                board_id=board_id,
+                column_id=data.column_id,
+                parent_id=data.parent_id,
+                title=data.title,
+                description=data.description,
+                priority=data.priority,
+                due_date=data.due_date,
+                sort_order=max_order + 1,
+                created_by_id=self.member.id,
+            )
+            self.db.add(task)
+            await self.db.flush()
 
-        # Add history entry
-        await self._add_history(task.id, TaskHistoryAction.CREATED)
+            # Add history entry
+            await self._add_history(task.id, TaskHistoryAction.CREATED)
 
-        # Add assignees if provided
-        if data.assignee_ids:
-            for member_id in data.assignee_ids:
-                await self.add_assignee(task.id, member_id)
+            # Add assignees if provided
+            if data.assignee_ids:
+                for member_id in data.assignee_ids:
+                    await self.add_assignee(task.id, member_id)
 
-        await self.db.refresh(task)
+            await self.db.refresh(task)
+
         return task
 
     async def update_task(self, task_id: int, data: TaskUpdate) -> Task:

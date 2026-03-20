@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Users, AlertTriangle } from "lucide-react";
 import {
   Card,
@@ -23,7 +24,7 @@ interface TeamProgressWidgetProps {
   className?: string;
 }
 
-export function TeamProgressWidget({
+export const TeamProgressWidget = memo(function TeamProgressWidget({
   teamStats,
   isLoading,
   className,
@@ -107,4 +108,4 @@ export function TeamProgressWidget({
       </CardContent>
     </Card>
   );
-}
+});

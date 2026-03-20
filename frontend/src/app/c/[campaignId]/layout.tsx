@@ -19,6 +19,7 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string>("member");
   const [loading, setLoading] = useState(true);
   const [pendingApprovals, setPendingApprovals] = useState(0);
 
@@ -36,6 +37,16 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
         ]);
         setCampaign(campaignData);
         setUser(userData);
+
+        // 사용자의 캠페인 역할 조회
+        try {
+          const membershipRes = await api.get<{ role: { name: string } }>(
+            `/campaigns/${campaignId}/members/me`
+          );
+          setUserRole(membershipRes.role?.name || "member");
+        } catch {
+          // 역할 조회 실패 시 기본값 사용
+        }
 
         // 결재 대기 건수 조회
         try {
@@ -94,7 +105,7 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
           {/* 사이드바 */}
           <Sidebar
             campaignId={campaignId}
-            userRole={user?.role || "member"}
+            userRole={userRole}
             pendingApprovals={pendingApprovals}
           />
 

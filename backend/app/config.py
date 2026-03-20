@@ -128,6 +128,15 @@ class Settings(BaseSettings):
     # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
     token_encryption_key: Optional[str] = None
 
+    # Cookie-based authentication (more secure than localStorage)
+    use_cookie_auth: bool = False  # Set to True to use httpOnly cookies
+    cookie_domain: Optional[str] = None  # e.g., ".example.com" for cross-subdomain
+    cookie_secure: bool = True  # Require HTTPS (set False for local dev)
+    cookie_samesite: str = "lax"  # "strict", "lax", or "none"
+    cookie_path: str = "/"
+    access_token_cookie_name: str = "access_token"
+    refresh_token_cookie_name: str = "refresh_token"
+
     # Base URLs for OAuth redirects
     api_base_url: str = "http://localhost:8000"
     frontend_base_url: str = "http://localhost:3000"

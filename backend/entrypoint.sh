@@ -25,11 +25,34 @@ done
 
 echo "PostgreSQL is up!"
 
-# Wait for Redis to be ready (optional) - simple timeout approach
+# Wait for Redis to be ready (optional)
 if [ -n "$REDIS_URL" ]; then
     echo "Waiting for Redis..."
-    sleep 5  # Give Redis time to start
-    echo "Redis should be up (waited 5s)"
+    REDIS_RETRIES=0
+    REDIS_MAX_RETRIES=30
+    while ! python -c "
+import redis
+import os
+
+url = os.environ.get('REDIS_URL', '')
+try:
+    client = redis.from_url(url)
+    client.ping()
+    exit(0)
+except:
+    exit(1)
+" 2>/dev/null; do
+        REDIS_RETRIES=$((REDIS_RETRIES + 1))
+        if [ $REDIS_RETRIES -ge $REDIS_MAX_RETRIES ]; then
+            echo "Warning: Redis is unavailable after $REDIS_MAX_RETRIES retries - continuing without Redis"
+            break
+        fi
+        echo "Redis is unavailable - sleeping (attempt $REDIS_RETRIES/$REDIS_MAX_RETRIES)"
+        sleep 2
+    done
+    if [ $REDIS_RETRIES -lt $REDIS_MAX_RETRIES ]; then
+        echo "Redis is up!"
+    fi
 fi
 
 # Run database migrations

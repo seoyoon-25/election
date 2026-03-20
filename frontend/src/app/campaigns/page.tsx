@@ -67,7 +67,7 @@ export default function CampaignsPage() {
         )}
 
         {memberships.length === 0 ? (
-          <Card padding="lg" className="text-center py-12">
+          <Card className="p-8 text-center py-12">
             <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-6" />
             <CardTitle className="text-xl">참여 중인 캠프가 없습니다</CardTitle>
             <p className="text-gray-600 mt-3 mb-8 max-w-md mx-auto">

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { Plus, ArrowRight, CheckSquare } from "lucide-react";
 import {
@@ -44,7 +45,7 @@ const priorityBorderColors = {
   urgent: "border-l-red-500",
 };
 
-export function MyTasksWidget({
+export const MyTasksWidget = memo(function MyTasksWidget({
   tasks,
   isLoading,
   error,
@@ -119,9 +120,9 @@ export function MyTasksWidget({
       </CardContent>
     </Card>
   );
-}
+});
 
-function TaskItem({
+const TaskItem = memo(function TaskItem({
   task,
   onClick,
 }: {
@@ -149,4 +150,4 @@ function TaskItem({
       </div>
     </div>
   );
-}
+});

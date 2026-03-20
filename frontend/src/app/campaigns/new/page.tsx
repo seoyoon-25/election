@@ -175,7 +175,7 @@ export default function NewCampaignPage() {
           </Link>
         </div>
 
-        <Card padding="lg">
+        <Card className="p-8">
           <div className="text-center mb-6">
             <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <Building2 className="w-6 h-6 text-primary" />

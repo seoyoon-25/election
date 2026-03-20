@@ -29,6 +29,7 @@ from app.models import (
 )
 from app.services.auth_service import AuthService
 from app.schemas.auth import TokenResponse
+from app.core.security import create_token_pair
 
 
 router = APIRouter(prefix="/invitations", tags=["Invitations"])
@@ -365,7 +366,7 @@ async def accept_invitation(
     await db.commit()
 
     # Generate tokens
-    tokens = auth_service._generate_tokens(user.id)
+    tokens = create_token_pair(user.id)
 
     return InvitationAcceptResponse(
         user_id=user.id,

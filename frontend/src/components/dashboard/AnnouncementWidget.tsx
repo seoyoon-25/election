@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { ArrowRight, Megaphone, Pin } from "lucide-react";
 import {
@@ -26,7 +27,7 @@ interface AnnouncementWidgetProps {
   campaignId: string;
 }
 
-export function AnnouncementWidget({
+export const AnnouncementWidget = memo(function AnnouncementWidget({
   announcements,
   isLoading,
   campaignId,
@@ -80,9 +81,9 @@ export function AnnouncementWidget({
       </CardContent>
     </Card>
   );
-}
+});
 
-function AnnouncementItem({
+const AnnouncementItem = memo(function AnnouncementItem({
   announcement,
   campaignId,
 }: {
@@ -112,4 +113,4 @@ function AnnouncementItem({
       </div>
     </Link>
   );
-}
+});

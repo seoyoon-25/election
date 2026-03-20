@@ -86,11 +86,11 @@ class User(Base, TimestampMixin):
         nullable=True,
     )
 
-    # Relationships
+    # Relationships (lazy loading by default)
     memberships: Mapped[list["CampaignMembership"]] = relationship(
         "CampaignMembership",
         back_populates="user",
-        lazy="selectin",
+        lazy="select",  # Lazy load to avoid N+1 when not needed
         cascade="all, delete-orphan",
         foreign_keys="CampaignMembership.user_id",
     )

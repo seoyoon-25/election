@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { api } from "@/lib/api";
-import { Task, PaginatedResponse } from "@/types";
+import { Task, TaskAssignee, PaginatedResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   TaskBoard,
@@ -70,7 +70,7 @@ export default function TasksPage() {
       // 담당자 필터
       if (filters.assignee) {
         const hasAssignee = task.assignees?.some(
-          (a) => a.id === filters.assignee
+          (a: TaskAssignee) => String(a.id) === filters.assignee
         );
         if (!hasAssignee) return false;
       }
@@ -88,7 +88,7 @@ export default function TasksPage() {
   // 태스크 데이터를 컴포넌트용으로 변환
   const formattedTasks = useMemo(() => {
     return filteredTasks.map((task) => ({
-      id: task.id,
+      id: String(task.id),
       title: task.title,
       status: task.status as
         | "backlog"
@@ -98,9 +98,9 @@ export default function TasksPage() {
         | "done",
       priority: task.priority as "low" | "medium" | "high" | "urgent",
       due_date: task.due_date,
-      assignees: task.assignees?.map((a) => ({
-        id: a.id,
-        name: a.full_name || a.email,
+      assignees: task.assignees?.map((a: TaskAssignee) => ({
+        id: String(a.id),
+        name: a.full_name || a.email || "",
         avatar_url: a.avatar_url,
       })),
       comments_count: task.comments_count,
@@ -113,11 +113,12 @@ export default function TasksPage() {
   const assigneeOptions = useMemo(() => {
     const assigneesMap = new Map<string, { id: string; name: string }>();
     tasks.forEach((task) => {
-      task.assignees?.forEach((a) => {
-        if (!assigneesMap.has(a.id)) {
-          assigneesMap.set(a.id, {
-            id: a.id,
-            name: a.full_name || a.email,
+      task.assignees?.forEach((a: TaskAssignee) => {
+        const idStr = String(a.id);
+        if (!assigneesMap.has(idStr)) {
+          assigneesMap.set(idStr, {
+            id: idStr,
+            name: a.full_name || a.email || "",
           });
         }
       });

@@ -10,7 +10,7 @@ Common dependencies used across API endpoints for:
 
 from typing import Annotated, Optional
 
-from fastapi import Depends, HTTPException, Header, status
+from fastapi import Depends, HTTPException, Header, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +18,8 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_async_session, set_tenant_context
 from app.core.security import verify_access_token
+from app.core.cookies import get_access_token_from_cookie
+from app.config import get_settings
 from app.models import User, CampaignMembership, Role, Permission
 from app.services.token_blacklist import check_token_valid
 
@@ -37,16 +39,32 @@ DB = Annotated[AsyncSession, Depends(get_db)]
 
 
 async def get_current_user(
+    request: Request,
     db: DB,
     credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)],
 ) -> User:
     """
     Get current authenticated user from JWT token.
 
+    Supports both:
+    1. Authorization header (Bearer token)
+    2. httpOnly cookie (when use_cookie_auth is enabled)
+
     Raises:
         HTTPException: If token is missing, invalid, blacklisted, or user not found
     """
-    if not credentials:
+    token: Optional[str] = None
+
+    # Try to get token from Authorization header first
+    if credentials:
+        token = credentials.credentials
+    else:
+        # Fall back to cookie if cookie auth is enabled
+        settings = get_settings()
+        if settings.use_cookie_auth:
+            token = get_access_token_from_cookie(request)
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -54,7 +72,7 @@ async def get_current_user(
         )
 
     # First verify token signature and expiration
-    user_id = verify_access_token(credentials.credentials)
+    user_id = verify_access_token(token)
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -63,7 +81,7 @@ async def get_current_user(
         )
 
     # Check if token is blacklisted or user tokens invalidated
-    is_valid, error_msg = await check_token_valid(credentials.credentials)
+    is_valid, error_msg = await check_token_valid(token)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

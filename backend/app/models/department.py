@@ -96,9 +96,51 @@ class Department(Base, TimestampMixin, TenantMixin):
     @property
     def full_path(self) -> str:
         """Get full hierarchical path (e.g., 'Operations > Field')."""
-        if self.parent:
-            return f"{self.parent.full_path} > {self.name}"
-        return self.name
+        parts = [self.name]
+        current = self.parent
+        seen_ids = {self.id}
+
+        # Traverse up the hierarchy with cycle detection
+        while current is not None:
+            if current.id in seen_ids:
+                # Circular reference detected, stop traversal
+                break
+            seen_ids.add(current.id)
+            parts.insert(0, current.name)
+            current = current.parent
+
+        return " > ".join(parts)
+
+    def would_create_cycle(self, new_parent_id: int | None) -> bool:
+        """
+        Check if setting parent_id would create a circular reference.
+
+        Args:
+            new_parent_id: The proposed new parent department ID
+
+        Returns:
+            True if setting this parent would create a cycle
+        """
+        if new_parent_id is None:
+            return False
+
+        if new_parent_id == self.id:
+            return True
+
+        # Check if the new parent is a descendant of this department
+        def is_descendant(dept_id: int, target_id: int, visited: set) -> bool:
+            if dept_id in visited:
+                return False
+            visited.add(dept_id)
+
+            for child in self.children:
+                if child.id == target_id:
+                    return True
+                if is_descendant(child.id, target_id, visited):
+                    return True
+            return False
+
+        return is_descendant(self.id, new_parent_id, set())
 
 
 # Default departments created for new campaigns

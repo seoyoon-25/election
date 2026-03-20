@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { ArrowRight, ClipboardList, Check, X } from "lucide-react";
 import {
@@ -40,7 +41,7 @@ const entityTypeLabels: Record<string, string> = {
   task: "태스크",
 };
 
-export function PendingApprovalsWidget({
+export const PendingApprovalsWidget = memo(function PendingApprovalsWidget({
   approvals,
   isLoading,
   error,
@@ -112,9 +113,9 @@ export function PendingApprovalsWidget({
       </CardContent>
     </Card>
   );
-}
+});
 
-function ApprovalItem({
+const ApprovalItem = memo(function ApprovalItem({
   approval,
   onApprove,
   onReject,
@@ -161,4 +162,4 @@ function ApprovalItem({
       </div>
     </div>
   );
-}
+});

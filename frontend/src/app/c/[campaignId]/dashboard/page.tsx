@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Task, CalendarEvent, ApprovalRequest, PaginatedResponse } from "@/types";
@@ -84,50 +84,53 @@ export default function DashboardPage() {
     fetchData();
   }, [campaignId]);
 
-  // 알림 데이터 계산
-  const alerts = [];
-  const overdueCount = tasks.filter(
-    (t) => getDueStatus(t.due_date) === "overdue"
-  ).length;
-  const todayDueCount = tasks.filter(
-    (t) => getDueStatus(t.due_date) === "today"
-  ).length;
-  const pendingApprovalsCount = approvals.filter(
-    (a) => a.status === "pending"
-  ).length;
+  // 알림 데이터 계산 (useMemo로 불필요한 재계산 방지)
+  const alerts = useMemo(() => {
+    const result = [];
+    const overdueCount = tasks.filter(
+      (t) => getDueStatus(t.due_date) === "overdue"
+    ).length;
+    const todayDueCount = tasks.filter(
+      (t) => getDueStatus(t.due_date) === "today"
+    ).length;
+    const pendingApprovalsCount = approvals.filter(
+      (a) => a.status === "pending"
+    ).length;
 
-  if (overdueCount > 0) {
-    alerts.push({
-      type: "overdue" as const,
-      count: overdueCount,
-      message: "지연된 태스크",
-      href: `/c/${campaignId}/my-tasks?filter=overdue`,
-    });
-  }
-  if (pendingApprovalsCount > 0) {
-    alerts.push({
-      type: "urgent_approval" as const,
-      count: pendingApprovalsCount,
-      message: "결재 대기",
-      href: `/c/${campaignId}/my-approvals`,
-    });
-  }
-  if (todayDueCount > 0) {
-    alerts.push({
-      type: "deadline" as const,
-      count: todayDueCount,
-      message: "오늘 마감",
-      href: `/c/${campaignId}/my-tasks?filter=today`,
-    });
-  }
-  if (events.length > 0) {
-    alerts.push({
-      type: "meeting" as const,
-      count: events.length,
-      message: "오늘 일정",
-      href: `/c/${campaignId}/my-calendar`,
-    });
-  }
+    if (overdueCount > 0) {
+      result.push({
+        type: "overdue" as const,
+        count: overdueCount,
+        message: "지연된 태스크",
+        href: `/c/${campaignId}/my-tasks?filter=overdue`,
+      });
+    }
+    if (pendingApprovalsCount > 0) {
+      result.push({
+        type: "urgent_approval" as const,
+        count: pendingApprovalsCount,
+        message: "결재 대기",
+        href: `/c/${campaignId}/my-approvals`,
+      });
+    }
+    if (todayDueCount > 0) {
+      result.push({
+        type: "deadline" as const,
+        count: todayDueCount,
+        message: "오늘 마감",
+        href: `/c/${campaignId}/my-tasks?filter=today`,
+      });
+    }
+    if (events.length > 0) {
+      result.push({
+        type: "meeting" as const,
+        count: events.length,
+        message: "오늘 일정",
+        href: `/c/${campaignId}/my-calendar`,
+      });
+    }
+    return result;
+  }, [tasks, approvals, events, campaignId]);
 
   // 팀별 진행 현황 (샘플 데이터 - 실제로는 API에서 가져와야 함)
   const teamStats = [

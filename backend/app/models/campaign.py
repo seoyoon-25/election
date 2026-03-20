@@ -96,23 +96,23 @@ class Campaign(Base, TimestampMixin):
         nullable=False,
     )
 
-    # Relationships
+    # Relationships (lazy loading by default, use selectinload() when needed)
     memberships: Mapped[list["CampaignMembership"]] = relationship(
         "CampaignMembership",
         back_populates="campaign",
-        lazy="selectin",
+        lazy="select",  # Lazy load to avoid N+1 when not needed
         cascade="all, delete-orphan",
     )
     roles: Mapped[list["Role"]] = relationship(
         "Role",
         back_populates="campaign",
-        lazy="selectin",
+        lazy="select",
         cascade="all, delete-orphan",
     )
     departments: Mapped[list["Department"]] = relationship(
         "Department",
         back_populates="campaign",
-        lazy="selectin",
+        lazy="select",
         cascade="all, delete-orphan",
     )
 

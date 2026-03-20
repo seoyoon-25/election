@@ -33,6 +33,7 @@ class MembershipUpdate(BaseSchema):
     department_id: Optional[int] = None
     title: Optional[str] = Field(None, max_length=100)
     is_active: Optional[bool] = None
+    is_department_head: Optional[bool] = None
 
 
 class MembershipResponse(MembershipBase, TimestampSchema):
@@ -42,6 +43,7 @@ class MembershipResponse(MembershipBase, TimestampSchema):
     user_id: int
     campaign_id: int
     is_active: bool
+    is_department_head: bool = False
     joined_at: datetime
     invited_by_id: Optional[int] = None
 
@@ -71,6 +73,7 @@ class MemberResponse(BaseSchema):
     department: Optional[DepartmentBrief] = None
     title: Optional[str] = None
     is_active: bool
+    is_department_head: bool = False
     joined_at: datetime
     is_owner: bool
     is_admin: bool

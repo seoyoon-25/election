@@ -1,5 +1,18 @@
 // shadcn/ui 기반 컴포넌트
 export { Alert, AlertTitle, AlertDescription } from "./alert";
+export {
+  AlertDialog,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "./alert-dialog";
 export { Avatar, AvatarImage, AvatarFallback } from "./avatar";
 export { Badge, badgeVariants } from "./badge";
 export { Button, buttonVariants } from "./button";
@@ -88,3 +101,16 @@ export {
   TooltipContent,
   TooltipProvider,
 } from "./tooltip";
+export {
+  type ToastProps,
+  type ToastActionElement,
+  ToastProvider,
+  ToastViewport,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+} from "./toast";
+export { useToast, toast } from "./use-toast";
+export { Toaster } from "./toaster";

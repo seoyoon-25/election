@@ -15,6 +15,12 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // 기본 색상 배지
+        gray: "border-transparent bg-gray-100 text-gray-700",
+        green: "border-transparent bg-green-100 text-green-700",
+        yellow: "border-transparent bg-yellow-100 text-yellow-700",
+        blue: "border-transparent bg-blue-100 text-blue-700",
+        red: "border-transparent bg-red-100 text-red-700",
         // 상태별 배지
         backlog: "border-transparent bg-gray-100 text-gray-700",
         todo: "border-transparent bg-blue-100 text-blue-700",

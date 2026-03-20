@@ -14,6 +14,7 @@ from app.api.v1.tasks import router as tasks_router
 from app.api.v1.approvals import router as approvals_router
 from app.api.v1.calendar import router as calendar_router
 from app.api.v1.invitations import router as invitations_router
+from app.api.v1.admin import router as admin_router
 
 # Create main API router
 api_router = APIRouter()
@@ -27,6 +28,7 @@ api_router.include_router(tasks_router)
 api_router.include_router(approvals_router)
 api_router.include_router(calendar_router)
 api_router.include_router(invitations_router)
+api_router.include_router(admin_router)
 
 
 # API info endpoint

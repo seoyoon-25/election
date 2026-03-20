@@ -48,6 +48,12 @@ dependencies = [
 
     # Background task scheduling
     "apscheduler>=3.10.0",
+
+    # Rate limiting
+    "slowapi>=0.1.9",
+
+    # File type detection
+    "python-magic>=0.4.27",
 ]
 
 [project.optional-dependencies]
