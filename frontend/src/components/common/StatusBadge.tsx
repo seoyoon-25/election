@@ -8,7 +8,7 @@ export type TaskStatus =
   | "review"
   | "done";
 
-export type ApprovalStatus = "pending" | "approved" | "rejected";
+export type ApprovalStatus = "pending" | "approved" | "rejected" | "cancelled" | "expired";
 
 interface StatusBadgeProps {
   status: TaskStatus | ApprovalStatus;
@@ -34,6 +34,8 @@ const approvalStatusConfig: Record<
   pending: { label: "대기", variant: "pending" },
   approved: { label: "승인", variant: "approved" },
   rejected: { label: "반려", variant: "rejected" },
+  cancelled: { label: "취소", variant: "rejected" },
+  expired: { label: "만료", variant: "rejected" },
 };
 
 export function StatusBadge({ status, size = "md", className }: StatusBadgeProps) {

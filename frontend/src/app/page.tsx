@@ -1,44 +1,25 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { isAuthenticated } from "@/lib/auth";
-import { api } from "@/lib/api";
-import { APP_NAME } from "@/lib/constants";
-import { Button } from "@/components/ui";
+import type { Metadata } from "next";
 import {
   CheckCircle2,
   Calendar,
   Users,
   ClipboardList,
   Shield,
-  Loader2,
 } from "lucide-react";
+import { GoogleLoginButton, EmailLoginButton } from "@/components/landing/LoginButtons";
 
-// Google 아이콘 컴포넌트
-function GoogleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24">
-      <path
-        fill="currentColor"
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-      />
-      <path
-        fill="currentColor"
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-      />
-      <path
-        fill="currentColor"
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-      />
-      <path
-        fill="currentColor"
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-      />
-    </svg>
-  );
-}
+// SEO를 위한 메타데이터
+export const metadata: Metadata = {
+  title: "캠프보드 - 선거 캠프 운영 관리 시스템",
+  description: "캠프보드는 선거 캠프를 위한 업무 관리 시스템입니다. 업무 관리(칸반 보드), 일정 공유, 결재 워크플로우, 팀원 관리 기능을 제공합니다.",
+  keywords: ["캠프보드", "선거", "캠프", "업무관리", "태스크", "협업", "선거캠프"],
+  openGraph: {
+    title: "캠프보드 - 선거 캠프 운영 관리 시스템",
+    description: "캠프보드는 선거 캠프를 위한 업무 관리 시스템입니다.",
+    siteName: "캠프보드",
+  },
+};
 
 const FEATURES = [
   {
@@ -64,38 +45,6 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
-  const router = useRouter();
-  const [checking, setChecking] = useState(true);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  useEffect(() => {
-    if (isAuthenticated()) {
-      router.push("/campaigns");
-    } else {
-      setChecking(false);
-    }
-  }, [router]);
-
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    try {
-      const response = await api.get<{ authorization_url: string }>(
-        "/auth/google?redirect_uri=/login"
-      );
-      window.location.href = response.authorization_url;
-    } catch {
-      router.push("/login");
-    }
-  };
-
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       {/* 헤더 */}
@@ -105,70 +54,82 @@ export default function LandingPage() {
             <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-slate-900">{APP_NAME}</span>
+            <span className="text-xl font-bold text-slate-900">캠프보드</span>
           </div>
-          <Link href="/login">
-            <Button variant="ghost" size="sm">
-              로그인
-            </Button>
-          </Link>
+          <nav className="flex items-center gap-4">
+            <Link
+              href="/privacy"
+              className="text-sm text-slate-500 hover:text-slate-700"
+            >
+              개인정보처리방침
+            </Link>
+            <Link href="/login">
+              <span className="text-sm font-medium text-primary hover:text-primary/80">
+                로그인
+              </span>
+            </Link>
+          </nav>
         </div>
       </header>
 
       {/* 히어로 섹션 */}
       <section className="py-24 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          {/* 메인 타이틀 */}
+          {/* 앱 이름과 설명 배지 */}
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6">
+            <Shield className="w-4 h-4" />
+            <span className="font-bold">캠프보드</span>
+            <span className="text-primary/70">| 선거 캠프 운영 관리 시스템</span>
+          </div>
+
+          {/* 메인 타이틀 - 앱 이름 명시 */}
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 leading-tight tracking-tight">
-            선거캠프 실무를
+            <span className="text-primary">캠프보드</span>로
             <br />
-            <span className="text-primary">한곳에서</span> 관리하세요
+            선거캠프를 관리하세요
           </h1>
 
-          {/* 서브 설명 */}
-          <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-xl mx-auto leading-relaxed">
-            업무, 일정, 결재, 팀원 관리까지
-            <br className="hidden sm:block" />
-            캠프 운영에 필요한 모든 것을 하나의 공간에서
-          </p>
+          {/* 앱 목적 설명 - 명확하게 */}
+          <div className="bg-slate-100 rounded-xl p-6 mb-8 max-w-2xl mx-auto">
+            <h2 className="text-lg font-semibold text-slate-800 mb-2">
+              캠프보드란?
+            </h2>
+            <p className="text-slate-600 leading-relaxed">
+              <strong>캠프보드</strong>는 <strong>선거 캠프를 위한 업무 관리 시스템</strong>입니다.
+              업무 관리(칸반 보드), 일정 공유, 결재 워크플로우, 팀원 관리 등
+              캠프 운영에 필요한 모든 기능을 하나의 공간에서 제공합니다.
+            </p>
+          </div>
 
-          {/* CTA 버튼들 */}
+          {/* CTA 버튼들 - 클라이언트 컴포넌트 */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full sm:w-auto h-12 px-6 text-base"
-              onClick={handleGoogleLogin}
-              disabled={googleLoading}
-            >
-              {googleLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <GoogleIcon className="w-5 h-5 mr-2" />
-                  Google로 시작하기
-                </>
-              )}
-            </Button>
-            <Link href="/login">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto h-12 px-6 text-base"
-              >
-                이메일로 로그인
-              </Button>
-            </Link>
+            <GoogleLoginButton />
+            <EmailLoginButton />
           </div>
 
           <p className="mt-6 text-sm text-slate-500">
             초대받은 팀원만 가입할 수 있습니다
           </p>
+
+          {/* 개인정보처리방침 및 이용약관 링크 */}
+          <div className="mt-4 flex justify-center gap-4 text-sm">
+            <Link href="/privacy" className="text-primary hover:underline font-medium">
+              개인정보 처리방침
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link href="/terms" className="text-slate-500 hover:text-slate-700">
+              이용약관
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* 기능 소개 - 간결한 그리드 */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-center text-slate-900 mb-8">
+            캠프보드 주요 기능
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {FEATURES.map((feature) => (
               <div
@@ -219,11 +180,24 @@ export default function LandingPage() {
             <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
               <Shield className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-slate-700">{APP_NAME}</span>
+            <span className="font-semibold text-slate-700">캠프보드</span>
           </div>
-          <p className="text-sm text-slate-500">
-            &copy; 2024 {APP_NAME}. All rights reserved.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            <nav className="flex gap-4 sm:gap-6 text-sm text-slate-500">
+              <Link href="/privacy" className="hover:text-slate-700 font-medium">
+                개인정보 처리방침
+              </Link>
+              <Link href="/terms" className="hover:text-slate-700">
+                이용약관
+              </Link>
+              <Link href="/app-terms" className="hover:text-slate-700">
+                앱 서비스 약관
+              </Link>
+            </nav>
+            <p className="text-sm text-slate-500">
+              &copy; 2024 캠프보드
+            </p>
+          </div>
         </div>
       </footer>
     </div>

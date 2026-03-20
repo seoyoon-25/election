@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { ApprovalRequest, PaginatedResponse, ApprovalStatus } from "@/types";
-import { Card, CardTitle, StatusBadge, Button } from "@/components/ui";
+import { Card, CardTitle, Button } from "@/components/ui";
+import { StatusBadge } from "@/components/common";
 import { Check, X, Clock } from "lucide-react";
 import { format } from "date-fns";
 

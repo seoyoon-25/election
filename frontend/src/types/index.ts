@@ -6,6 +6,7 @@ export interface User {
   is_active: boolean;
   is_superuser: boolean;
   created_at: string;
+  avatar_url?: string;
 }
 
 export interface AuthTokens {
@@ -73,15 +74,19 @@ export interface TaskCreate {
 }
 
 // Calendar Types
+export type EventType = "meeting" | "campaign" | "deadline" | "briefing" | "other";
+
 export interface CalendarEvent {
-  id: number;
+  id: string | number;
   campaign_id: number;
   title: string;
   description?: string;
   start_time: string;
   end_time: string;
   location?: string;
+  type?: EventType;
   is_all_day: boolean;
+  attendees?: { id: number; full_name?: string; email?: string; avatar_url?: string }[];
   created_at: string;
 }
 
@@ -105,6 +110,7 @@ export interface ApprovalRequest {
   entity_id: number;
   status: ApprovalStatus;
   requested_by_id: number;
+  requested_by?: { id: number; full_name?: string; email?: string };
   created_at: string;
 }
 

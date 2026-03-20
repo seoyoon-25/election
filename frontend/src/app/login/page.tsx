@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { login } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Button, Input, Card, CardTitle } from "@/components/ui";
+import { Button, Input, Card } from "@/components/ui";
 import { APP_NAME } from "@/lib/constants";
-import { Shield, Mail, Lock, AlertCircle } from "lucide-react";
+import { Shield, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 
 // Google 아이콘 컴포넌트
 function GoogleIcon({ className }: { className?: string }) {
@@ -41,7 +41,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   invitation_required: "초대받은 사용자만 가입할 수 있습니다.",
 };
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -101,102 +101,120 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white py-12 px-4">
-      <Card className="w-full max-w-md p-8">
-        {/* 헤더 */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold">{APP_NAME}</span>
-          </Link>
-          <p className="text-slate-600">계정에 로그인하세요</p>
+    <Card className="w-full max-w-md p-8">
+      {/* 헤더 */}
+      <div className="text-center mb-8">
+        <Link href="/" className="inline-flex items-center gap-2 mb-4">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <Shield className="w-6 h-6 text-primary-foreground" />
+          </div>
+          <span className="text-2xl font-bold">{APP_NAME}</span>
+        </Link>
+        <p className="text-slate-600">계정에 로그인하세요</p>
+      </div>
+
+      {/* 에러 메시지 */}
+      {error && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Google 로그인 */}
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full mb-6 h-11"
+        onClick={handleGoogleLogin}
+        disabled={googleLoading}
+      >
+        {googleLoading ? (
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-600" />
+        ) : (
+          <>
+            <GoogleIcon className="w-5 h-5 mr-2" />
+            Google로 계속하기
+          </>
+        )}
+      </Button>
+
+      {/* 구분선 */}
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-white px-4 text-slate-500">또는</span>
+        </div>
+      </div>
+
+      {/* 이메일/비밀번호 폼 */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="이메일"
+            required
+            autoComplete="email"
+            className="pl-10 h-11"
+          />
         </div>
 
-        {/* 에러 메시지 */}
-        {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호"
+            required
+            autoComplete="current-password"
+            className="pl-10 h-11"
+          />
+        </div>
 
-        {/* Google 로그인 */}
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full mb-6 h-11"
-          onClick={handleGoogleLogin}
-          disabled={googleLoading}
-        >
-          {googleLoading ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-600" />
+        <Button type="submit" className="w-full h-11" disabled={loading}>
+          {loading ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
           ) : (
-            <>
-              <GoogleIcon className="w-5 h-5 mr-2" />
-              Google로 계속하기
-            </>
+            "로그인"
           )}
         </Button>
+      </form>
 
-        {/* 구분선 */}
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-200" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-4 text-slate-500">또는</span>
-          </div>
-        </div>
+      {/* 푸터 */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-slate-500">
+          계정이 없으신가요?{" "}
+          <span className="text-slate-700">캠프 관리자에게 초대를 요청하세요</span>
+        </p>
+      </div>
+    </Card>
+  );
+}
 
-        {/* 이메일/비밀번호 폼 */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일"
-              required
-              autoComplete="email"
-              className="pl-10 h-11"
-            />
-          </div>
+function LoginLoading() {
+  return (
+    <Card className="w-full max-w-md p-8">
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    </Card>
+  );
+}
 
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호"
-              required
-              autoComplete="current-password"
-              className="pl-10 h-11"
-            />
-          </div>
-
-          <Button type="submit" className="w-full h-11" disabled={loading}>
-            {loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-            ) : (
-              "로그인"
-            )}
-          </Button>
-        </form>
-
-        {/* 푸터 */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-slate-500">
-            계정이 없으신가요?{" "}
-            <span className="text-slate-700">캠프 관리자에게 초대를 요청하세요</span>
-          </p>
-        </div>
-      </Card>
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white py-12 px-4">
+      <Suspense fallback={<LoginLoading />}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }

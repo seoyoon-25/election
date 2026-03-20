@@ -154,7 +154,7 @@ export default function DashboardPage() {
         {/* 좌측: 내 태스크 */}
         <MyTasksWidget
           tasks={tasks.map((t) => ({
-            id: t.id,
+            id: String(t.id),
             title: t.title,
             status: t.status as any,
             priority: t.priority as any,
@@ -168,7 +168,7 @@ export default function DashboardPage() {
         {/* 우측: 오늘 일정 */}
         <TodayScheduleWidget
           events={events.map((e) => ({
-            id: e.id,
+            id: String(e.id),
             title: e.title,
             start_time: e.start_time,
             end_time: e.end_time,
@@ -186,9 +186,9 @@ export default function DashboardPage() {
         {/* 결재 대기함 */}
         <PendingApprovalsWidget
           approvals={approvals.map((a) => ({
-            id: a.id,
+            id: String(a.id),
             entity_type: a.entity_type,
-            entity_id: a.entity_id,
+            entity_id: String(a.entity_id),
             status: a.status as any,
             created_at: a.created_at,
             requested_by: a.requested_by
@@ -205,7 +205,7 @@ export default function DashboardPage() {
               });
               setApprovals((prev) =>
                 prev.map((a) =>
-                  a.id === id ? { ...a, status: "approved" } : a
+                  String(a.id) === id ? { ...a, status: "approved" } : a
                 )
               );
             } catch (err) {
@@ -219,7 +219,7 @@ export default function DashboardPage() {
               });
               setApprovals((prev) =>
                 prev.map((a) =>
-                  a.id === id ? { ...a, status: "rejected" } : a
+                  String(a.id) === id ? { ...a, status: "rejected" } : a
                 )
               );
             } catch (err) {

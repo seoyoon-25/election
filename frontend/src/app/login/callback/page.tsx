@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
-export default function LoginCallbackPage() {
+function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -26,11 +26,26 @@ export default function LoginCallbackPage() {
   }, [router, searchParams]);
 
   return (
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+      <p className="text-slate-600">로그인 처리 중...</p>
+    </div>
+  );
+}
+
+export default function LoginCallbackPage() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-        <p className="text-slate-600">로그인 처리 중...</p>
-      </div>
+      <Suspense
+        fallback={
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-slate-600">로그인 처리 중...</p>
+          </div>
+        }
+      >
+        <CallbackHandler />
+      </Suspense>
     </div>
   );
 }

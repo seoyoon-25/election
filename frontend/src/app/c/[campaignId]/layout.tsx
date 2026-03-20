@@ -79,7 +79,7 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
         {/* 글로벌 상단바 */}
         <GlobalHeader
           user={{
-            id: user?.id || "",
+            id: String(user?.id || ""),
             name: user?.full_name || "사용자",
             email: user?.email || "",
             avatar_url: user?.avatar_url,

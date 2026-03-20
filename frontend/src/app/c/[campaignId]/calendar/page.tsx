@@ -62,7 +62,7 @@ export default function CalendarPage() {
   // 이벤트 데이터 포맷 변환
   const formattedEvents = useMemo(() => {
     return events.map((event) => ({
-      id: event.id,
+      id: String(event.id),
       title: event.title,
       description: event.description,
       start_time: event.start_time,
@@ -76,8 +76,8 @@ export default function CalendarPage() {
         | "other",
       is_all_day: event.is_all_day,
       attendees: event.attendees?.map((a) => ({
-        id: a.id,
-        name: a.full_name || a.email,
+        id: String(a.id),
+        name: a.full_name || a.email || "",
         avatar_url: a.avatar_url,
       })),
     }));
