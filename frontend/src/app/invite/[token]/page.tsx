@@ -485,6 +485,14 @@ export default function InvitationAcceptPage() {
               "가입하고 캠프 참여하기"
             )}
           </Button>
+
+          <p className="text-xs text-center text-muted-foreground mt-4">
+            가입 시{" "}
+            <Link href="/privacy" className="text-primary hover:underline">
+              개인정보 처리방침
+            </Link>
+            에 동의하게 됩니다.
+          </p>
         </form>
 
         {/* 푸터 */}

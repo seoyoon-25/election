@@ -65,7 +65,7 @@ export default function LandingPage() {
             </Link>
             <Link href="/login">
               <span className="text-sm font-medium text-primary hover:text-primary/80">
-                로그인
+                회원가입/로그인
               </span>
             </Link>
           </nav>
