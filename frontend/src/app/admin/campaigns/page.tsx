@@ -32,6 +32,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui";
 
 const statusOptions = [
@@ -56,6 +58,16 @@ const permissionToStatuses: Record<string, string[]> = {
   active: ["active", "paused"],
   ended: ["completed", "archived"],
 };
+
+// 권한 변경 시 사용할 기본 상태값
+const permissionToDefaultStatus: Record<string, string> = {
+  pending: "draft",
+  active: "active",
+  ended: "completed",
+};
+
+// 권한 변경 옵션 (필터에서 "all" 제외)
+const permissionChangeOptions = permissionOptions.filter(p => p.value !== "all");
 
 const statusLabels: Record<string, string> = {
   draft: "준비중",
@@ -106,6 +118,10 @@ export default function AdminCampaignsPage() {
   const [newStatus, setNewStatus] = useState("");
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
+
+  // Permission change dialog
+  const [newPermission, setNewPermission] = useState("");
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
 
   const fetchCampaigns = useCallback(async () => {
     setLoading(true);
@@ -170,6 +186,40 @@ export default function AdminCampaignsPage() {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handlePermissionChange = (campaign: AdminCampaign, permission: string) => {
+    setSelectedCampaign(campaign);
+    setNewPermission(permission);
+    setPermissionDialogOpen(true);
+  };
+
+  const confirmPermissionChange = async () => {
+    if (!selectedCampaign || !newPermission) return;
+
+    const targetStatus = permissionToDefaultStatus[newPermission];
+    if (!targetStatus) return;
+
+    setUpdating(true);
+    try {
+      await api.patch(`/admin/campaigns/${selectedCampaign.id}`, {
+        status: targetStatus,
+      });
+      setPermissionDialogOpen(false);
+      fetchCampaigns();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "권한 변경에 실패했습니다");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // 현재 캠페인의 권한 값 가져오기
+  const getCurrentPermission = (status: string): string => {
+    if (permissionToStatuses.pending.includes(status)) return "pending";
+    if (permissionToStatuses.active.includes(status)) return "active";
+    if (permissionToStatuses.ended.includes(status)) return "ended";
+    return "pending";
   };
 
   const handleExportCSV = async () => {
@@ -365,6 +415,21 @@ export default function AdminCampaignsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>권한 변경</DropdownMenuLabel>
+                            {permissionChangeOptions
+                              .filter((p) => p.value !== getCurrentPermission(campaign.status))
+                              .map((permission) => (
+                                <DropdownMenuItem
+                                  key={permission.value}
+                                  onClick={() =>
+                                    handlePermissionChange(campaign, permission.value)
+                                  }
+                                >
+                                  {permission.label}로 변경
+                                </DropdownMenuItem>
+                              ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>상태 변경</DropdownMenuLabel>
                             {statusOptions
                               .filter((s) => s.value && s.value !== "all" && s.value !== campaign.status)
                               .map((status) => (
@@ -441,6 +506,35 @@ export default function AdminCampaignsPage() {
               취소
             </Button>
             <Button onClick={confirmStatusChange} loading={updating}>
+              변경
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permission Change Dialog */}
+      <Dialog open={permissionDialogOpen} onOpenChange={setPermissionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>권한 변경 확인</DialogTitle>
+            <DialogDescription>
+              {selectedCampaign && (
+                <>
+                  <strong>{selectedCampaign.name}</strong> 캠프의 권한을{" "}
+                  <strong>{permissionOptions.find(p => p.value === newPermission)?.label}</strong>(으)로 변경하시겠습니까?
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPermissionDialogOpen(false)}
+              disabled={updating}
+            >
+              취소
+            </Button>
+            <Button onClick={confirmPermissionChange} loading={updating}>
               변경
             </Button>
           </DialogFooter>
