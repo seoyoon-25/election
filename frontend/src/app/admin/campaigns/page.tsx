@@ -297,7 +297,7 @@ export default function AdminCampaignsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             {statusOptions
-                              .filter((s) => s.value && s.value !== campaign.status)
+                              .filter((s) => s.value && s.value !== "all" && s.value !== campaign.status)
                               .map((status) => (
                                 <DropdownMenuItem
                                   key={status.value}
