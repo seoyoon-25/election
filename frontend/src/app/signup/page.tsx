@@ -6,7 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button, Input, Card } from "@/components/ui";
 import { APP_NAME } from "@/lib/constants";
-import { Shield, Mail, Lock, User, Phone, AlertCircle, Loader2, CheckCircle } from "lucide-react";
+import { Shield, Mail, Lock, User, Phone, AlertCircle, Loader2, CheckCircle, X } from "lucide-react";
 
 // Google 아이콘 컴포넌트
 function GoogleIcon({ className }: { className?: string }) {
@@ -44,10 +44,18 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // 개인정보 동의 확인
+    if (!privacyAgreed) {
+      setError("개인정보 제공에 동의해주세요.");
+      return;
+    }
 
     // 비밀번호 확인
     if (password !== confirmPassword) {
@@ -68,7 +76,7 @@ function SignupForm() {
         email,
         full_name: fullName,
         password,
-        phone: phone || undefined,
+        phone,
       });
 
       setSuccess(true);
@@ -175,20 +183,6 @@ function SignupForm() {
       {/* 회원가입 폼 */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="이메일"
-            required
-            autoComplete="email"
-            className="pl-10 h-11"
-          />
-        </div>
-
-        <div className="relative">
           <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <Input
             id="fullName"
@@ -209,8 +203,23 @@ function SignupForm() {
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="전화번호 (선택)"
+            placeholder="전화번호"
+            required
             autoComplete="tel"
+            className="pl-10 h-11"
+          />
+        </div>
+
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="이메일"
+            required
+            autoComplete="email"
             className="pl-10 h-11"
           />
         </div>
@@ -245,7 +254,28 @@ function SignupForm() {
           />
         </div>
 
-        <Button type="submit" className="w-full h-11" disabled={loading}>
+        {/* 개인정보 제공 동의 */}
+        <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+          <input
+            type="checkbox"
+            id="privacyAgreed"
+            checked={privacyAgreed}
+            onChange={(e) => setPrivacyAgreed(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+          />
+          <label htmlFor="privacyAgreed" className="text-sm text-slate-600">
+            <button
+              type="button"
+              onClick={() => setShowPrivacyModal(true)}
+              className="text-primary font-medium hover:underline"
+            >
+              개인정보 제공 동의
+            </button>
+            에 동의합니다. (필수)
+          </label>
+        </div>
+
+        <Button type="submit" className="w-full h-11" disabled={loading || !privacyAgreed}>
           {loading ? (
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
           ) : (
@@ -254,14 +284,57 @@ function SignupForm() {
         </Button>
       </form>
 
-      {/* 개인정보 처리방침 */}
-      <p className="mt-4 text-xs text-slate-500 text-center">
-        회원가입 시{" "}
-        <Link href="/privacy" className="text-primary hover:underline">
-          개인정보 처리방침
-        </Link>
-        에 동의하게 됩니다.
-      </p>
+      {/* 개인정보 제공 동의 모달 */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">개인정보 제공 동의</h3>
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="p-1 hover:bg-slate-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 text-sm text-slate-600 space-y-4">
+              <p className="font-medium text-slate-800">1. 수집하는 개인정보 항목</p>
+              <p>- 필수항목: 이름, 전화번호, 이메일, 비밀번호</p>
+
+              <p className="font-medium text-slate-800">2. 개인정보의 수집 및 이용 목적</p>
+              <p>- 회원 가입 및 관리: 회원제 서비스 이용에 따른 본인확인, 개인 식별, 불량회원의 부정 이용 방지</p>
+              <p>- 서비스 제공: 캠프 운영 관리 서비스 제공, 작업/일정/결재 관리 기능 제공</p>
+              <p>- 고객 지원: 민원처리, 공지사항 전달</p>
+
+              <p className="font-medium text-slate-800">3. 개인정보의 보유 및 이용 기간</p>
+              <p>- 회원 탈퇴 시까지 보유하며, 탈퇴 후 즉시 파기합니다.</p>
+              <p>- 단, 관계 법령에 따라 보존할 필요가 있는 경우 해당 기간 동안 보관합니다.</p>
+
+              <p className="font-medium text-slate-800">4. 동의 거부권 및 불이익</p>
+              <p>- 귀하는 개인정보 제공에 대한 동의를 거부할 권리가 있습니다.</p>
+              <p>- 다만, 필수 항목에 대한 동의를 거부할 경우 회원가입이 제한됩니다.</p>
+            </div>
+            <div className="p-4 border-t flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowPrivacyModal(false)}
+              >
+                닫기
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  setPrivacyAgreed(true);
+                  setShowPrivacyModal(false);
+                }}
+              >
+                동의하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 푸터 */}
       <div className="mt-6 text-center">
