@@ -49,6 +49,7 @@ from app.services.auth_service import (
     UserNotFoundError,
 )
 from app.services.token_blacklist import blacklist_token, invalidate_all_user_tokens
+from app.services.email_service import get_email_service, EmailNotConfiguredError, EmailSendError
 from app.core.logging import auth_logger
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -363,17 +364,29 @@ async def request_password_reset(
     - **email**: Email address of the account
 
     Always returns 202 Accepted to prevent email enumeration.
-    If the email exists, a reset token will be generated.
-
-    Note: In production, you would send an email with the reset link.
-    For now, the token is returned in the response (remove in production!).
+    If the email exists, a reset email will be sent.
     """
     token = await auth_service.request_password_reset(data.email)
 
-    # In production, send email with reset link
-    # TODO: Implement email sending
+    # Send email if token was generated (user exists)
+    if token:
+        email_service = get_email_service()
+        try:
+            await email_service.send_password_reset_email(
+                to_email=data.email,
+                reset_token=token,
+            )
+            auth_logger.info(f"Password reset email sent to {data.email}")
+        except EmailNotConfiguredError:
+            # Log the token for manual recovery if email is not configured
+            auth_logger.warning(
+                f"Email not configured. Password reset token for {data.email}: {token}"
+            )
+        except EmailSendError as e:
+            auth_logger.error(f"Failed to send password reset email: {e}")
+
     return {
-        "message": "If the email exists, a password reset link has been sent.",
+        "message": "이메일이 존재하면 비밀번호 재설정 링크가 발송됩니다.",
     }
 
 

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, FormEvent, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, FormEvent, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { login } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Button, Input, Card } from "@/components/ui";
 import { APP_NAME } from "@/lib/constants";
-import { Shield, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { Shield, Mail, Lock, User, Phone, AlertCircle, Loader2, CheckCircle } from "lucide-react";
 
 // Google 아이콘 컴포넌트
 function GoogleIcon({ className }: { className?: string }) {
@@ -33,72 +32,50 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-const ERROR_MESSAGES: Record<string, string> = {
-  invalid_state: "인증 세션이 만료되었습니다. 다시 시도해주세요.",
-  oauth_failed: "Google 인증에 실패했습니다. 다시 시도해주세요.",
-  email_required: "이메일 정보를 가져올 수 없습니다.",
-  account_disabled: "계정 승인 대기 중입니다. 관리자의 승인을 기다려주세요.",
-  invitation_required: "초대받은 사용자만 가입할 수 있습니다.",
-  pending_approval: "계정 승인 대기 중입니다. 관리자의 승인 후 로그인할 수 있습니다.",
-};
-
-function LoginForm() {
+function SignupForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  // Handle error from URL params (OAuth callback errors)
-  useEffect(() => {
-    const errorParam = searchParams.get("error");
-    const emailParam = searchParams.get("email");
-
-    if (errorParam) {
-      let message = ERROR_MESSAGES[errorParam] || "로그인에 실패했습니다.";
-      if (errorParam === "invitation_required" && emailParam) {
-        message = `${emailParam} 계정은 초대가 필요합니다. 캠프 관리자에게 초대를 요청하세요.`;
-      }
-      setError(message);
-    }
-  }, [searchParams]);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // 비밀번호 확인
+    if (password !== confirmPassword) {
+      setError("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    // 비밀번호 길이 확인
+    if (password.length < 8) {
+      setError("비밀번호는 최소 8자 이상이어야 합니다.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await login({ email, password });
+      await api.post("/auth/register", {
+        email,
+        full_name: fullName,
+        password,
+        phone: phone || undefined,
+      });
 
-      // Check if user is active
-      const userResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        }
-      );
-
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        if (userData.is_active) {
-          router.push("/campaigns");
-        } else {
-          router.push("/pending-approval");
-        }
-      } else {
-        router.push("/campaigns");
-      }
+      setSuccess(true);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "로그인에 실패했습니다";
-      // Handle inactive user error from backend
-      if (errorMessage.toLowerCase().includes("inactive")) {
-        setError(ERROR_MESSAGES.pending_approval);
+      const errorMessage = err instanceof Error ? err.message : "회원가입에 실패했습니다";
+      if (errorMessage.includes("409") || errorMessage.toLowerCase().includes("already")) {
+        setError("이미 등록된 이메일입니다.");
       } else {
         setError(errorMessage);
       }
@@ -107,7 +84,7 @@ function LoginForm() {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleSignup = async () => {
     setError("");
     setGoogleLoading(true);
 
@@ -115,7 +92,6 @@ function LoginForm() {
       const response = await api.get<{ authorization_url: string }>(
         "/auth/google?redirect_uri=/login"
       );
-      // Redirect to Google OAuth
       window.location.href = response.authorization_url;
     } catch (err) {
       if (err instanceof Error && err.message.includes("501")) {
@@ -127,6 +103,26 @@ function LoginForm() {
     }
   };
 
+  if (success) {
+    return (
+      <Card className="w-full max-w-md p-8">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+          <h2 className="text-xl font-semibold mb-2">회원가입 완료</h2>
+          <p className="text-slate-600 mb-6">
+            계정이 생성되었습니다.<br />
+            관리자 승인 후 로그인할 수 있습니다.
+          </p>
+          <Link href="/login">
+            <Button className="w-full">로그인 페이지로 이동</Button>
+          </Link>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-md p-8">
       {/* 헤더 */}
@@ -137,7 +133,7 @@ function LoginForm() {
           </div>
           <span className="text-2xl font-bold">{APP_NAME}</span>
         </Link>
-        <p className="text-slate-600">계정에 로그인하세요</p>
+        <p className="text-slate-600">새 계정을 만드세요</p>
       </div>
 
       {/* 에러 메시지 */}
@@ -148,12 +144,12 @@ function LoginForm() {
         </div>
       )}
 
-      {/* Google 로그인 */}
+      {/* Google 회원가입 */}
       <Button
         type="button"
         variant="outline"
         className="w-full mb-6 h-11"
-        onClick={handleGoogleLogin}
+        onClick={handleGoogleSignup}
         disabled={googleLoading}
       >
         {googleLoading ? (
@@ -176,7 +172,7 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* 이메일/비밀번호 폼 */}
+      {/* 회원가입 폼 */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="relative">
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -193,15 +189,58 @@ function LoginForm() {
         </div>
 
         <div className="relative">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            id="fullName"
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="이름"
+            required
+            autoComplete="name"
+            className="pl-10 h-11"
+          />
+        </div>
+
+        <div className="relative">
+          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            id="phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="전화번호 (선택)"
+            autoComplete="tel"
+            className="pl-10 h-11"
+          />
+        </div>
+
+        <div className="relative">
           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <Input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="비밀번호"
+            placeholder="비밀번호 (8자 이상)"
             required
-            autoComplete="current-password"
+            minLength={8}
+            autoComplete="new-password"
+            className="pl-10 h-11"
+          />
+        </div>
+
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="비밀번호 확인"
+            required
+            minLength={8}
+            autoComplete="new-password"
             className="pl-10 h-11"
           />
         </div>
@@ -210,27 +249,26 @@ function LoginForm() {
           {loading ? (
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
           ) : (
-            "로그인"
+            "회원가입"
           )}
         </Button>
       </form>
 
-      {/* 비밀번호 찾기 */}
-      <div className="mt-4 text-center">
-        <Link
-          href="/forgot-password"
-          className="text-sm text-slate-500 hover:text-primary"
-        >
-          비밀번호를 잊으셨나요?
+      {/* 개인정보 처리방침 */}
+      <p className="mt-4 text-xs text-slate-500 text-center">
+        회원가입 시{" "}
+        <Link href="/privacy" className="text-primary hover:underline">
+          개인정보 처리방침
         </Link>
-      </div>
+        에 동의하게 됩니다.
+      </p>
 
       {/* 푸터 */}
       <div className="mt-6 text-center">
         <p className="text-sm text-slate-500">
-          계정이 없으신가요?{" "}
-          <Link href="/signup" className="text-primary font-medium hover:underline">
-            회원가입
+          이미 계정이 있으신가요?{" "}
+          <Link href="/login" className="text-primary font-medium hover:underline">
+            로그인
           </Link>
         </p>
       </div>
@@ -238,7 +276,7 @@ function LoginForm() {
   );
 }
 
-function LoginLoading() {
+function SignupLoading() {
   return (
     <Card className="w-full max-w-md p-8">
       <div className="flex items-center justify-center py-12">
@@ -248,11 +286,11 @@ function LoginLoading() {
   );
 }
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white py-12 px-4">
-      <Suspense fallback={<LoginLoading />}>
-        <LoginForm />
+      <Suspense fallback={<SignupLoading />}>
+        <SignupForm />
       </Suspense>
     </div>
   );
