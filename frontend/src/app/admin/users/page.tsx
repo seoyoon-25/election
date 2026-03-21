@@ -36,6 +36,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
   Avatar,
   AvatarImage,
   AvatarFallback,
@@ -65,6 +67,15 @@ export default function AdminUsersPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // Approval confirmation dialog
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [userToApprove, setUserToApprove] = useState<AdminUser | null>(null);
+  const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve");
+  const [updating, setUpdating] = useState(false);
+
+  // Pending users count
+  const [pendingCount, setPendingCount] = useState(0);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -88,9 +99,24 @@ export default function AdminUsersPage() {
     }
   }, [page, search, activeFilter]);
 
+  const fetchPendingCount = useCallback(async () => {
+    try {
+      const data = await api.get<PaginatedResponse<AdminUser>>(
+        `/admin/users?is_active=false&page_size=1`
+      );
+      setPendingCount(data.total);
+    } catch {
+      // Ignore error for count
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => {
+    fetchPendingCount();
+  }, [fetchPendingCount]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,11 +138,40 @@ export default function AdminUsersPage() {
     }
   };
 
+  const openApprovalDialog = (user: AdminUser, action: "approve" | "reject") => {
+    setUserToApprove(user);
+    setApprovalAction(action);
+    setApprovalDialogOpen(true);
+  };
+
+  const confirmApproval = async () => {
+    if (!userToApprove) return;
+
+    const isActive = approvalAction === "approve";
+    setUpdating(true);
+    try {
+      await api.patch(`/admin/users/${userToApprove.id}/activate?is_active=${isActive}`);
+      // Refresh the users list
+      fetchUsers();
+      fetchPendingCount();
+      // If viewing detail, refresh it too
+      if (selectedUser && selectedUser.id === userToApprove.id) {
+        setSelectedUser({ ...selectedUser, is_active: isActive });
+      }
+      setApprovalDialogOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "상태 변경에 실패했습니다");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const handleToggleActive = async (userId: number, isActive: boolean) => {
     try {
       await api.patch(`/admin/users/${userId}/activate?is_active=${isActive}`);
       // Refresh the users list
       fetchUsers();
+      fetchPendingCount();
       // If viewing detail, refresh it too
       if (selectedUser && selectedUser.id === userId) {
         setSelectedUser({ ...selectedUser, is_active: isActive });
@@ -216,18 +271,33 @@ export default function AdminUsersPage() {
               </Button>
             </form>
 
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center flex-wrap">
+              {pendingCount > 0 && (
+                <Button
+                  variant={activeFilter === "false" ? "default" : "outline"}
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    setActiveFilter(activeFilter === "false" ? "all" : "false");
+                    setPage(1);
+                  }}
+                >
+                  승인대기
+                  <Badge variant="red" className="ml-1">{pendingCount}</Badge>
+                </Button>
+              )}
+
               <Select value={activeFilter} onValueChange={(value) => {
                 setActiveFilter(value);
                 setPage(1);
               }}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[130px]">
                   <SelectValue placeholder="전체 상태" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="true">활성</SelectItem>
-                  <SelectItem value="false">비활성</SelectItem>
+                  <SelectItem value="true">승인됨</SelectItem>
+                  <SelectItem value="false">승인대기</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -320,22 +390,34 @@ export default function AdminUsersPage() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           {!user.is_active && !user.is_superadmin && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => handleToggleActive(user.id, true)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              승인
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => openApprovalDialog(user, "approve")}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                승인
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-400 hover:text-red-600"
+                                onClick={() => openApprovalDialog(user, "reject")}
+                                title="거부"
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                           {user.is_active && !user.is_superadmin && (
                             <Button
                               variant="ghost"
                               size="sm"
                               className="text-gray-500 hover:text-red-600"
-                              onClick={() => handleToggleActive(user.id, false)}
+                              onClick={() => openApprovalDialog(user, "reject")}
+                              title="비활성화"
                             >
                               <XCircle className="h-4 w-4" />
                             </Button>
@@ -504,6 +586,55 @@ export default function AdminUsersPage() {
           ) : null}
         </SheetContent>
       </Sheet>
+
+      {/* Approval Confirmation Dialog */}
+      <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {approvalAction === "approve" ? "사용자 승인" : "사용자 비활성화"}
+            </DialogTitle>
+            <DialogDescription>
+              {userToApprove && (
+                <>
+                  <strong>{userToApprove.full_name}</strong> ({userToApprove.email})
+                  {approvalAction === "approve" ? (
+                    <>님의 계정을 승인하시겠습니까? 승인 후 로그인이 가능합니다.</>
+                  ) : (
+                    <>님의 계정을 비활성화하시겠습니까? 비활성화 후 로그인이 차단됩니다.</>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setApprovalDialogOpen(false)}
+              disabled={updating}
+            >
+              취소
+            </Button>
+            <Button
+              variant={approvalAction === "approve" ? "default" : "destructive"}
+              onClick={confirmApproval}
+              loading={updating}
+            >
+              {approvalAction === "approve" ? (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  승인
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 mr-1" />
+                  비활성화
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
