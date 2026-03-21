@@ -59,6 +59,22 @@ const statusColors: Record<string, "green" | "gray" | "yellow" | "blue" | "red">
   archived: "gray",
 };
 
+// 권한 상태 매핑 (승인대기, 활동중, 종료)
+const getPermissionStatus = (status: string): { label: string; color: "yellow" | "green" | "gray" } => {
+  switch (status) {
+    case "draft":
+      return { label: "승인대기", color: "yellow" };
+    case "active":
+    case "paused":
+      return { label: "활동중", color: "green" };
+    case "completed":
+    case "archived":
+      return { label: "종료", color: "gray" };
+    default:
+      return { label: "승인대기", color: "yellow" };
+  }
+};
+
 export default function AdminCampaignsPage() {
   const [campaigns, setCampaigns] = useState<AdminCampaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,6 +268,7 @@ export default function AdminCampaignsPage() {
                     <TableHead>멤버</TableHead>
                     <TableHead>대표</TableHead>
                     <TableHead>생성일</TableHead>
+                    <TableHead>권한</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -287,6 +304,16 @@ export default function AdminCampaignsPage() {
                       </TableCell>
                       <TableCell className="text-gray-500">
                         {formatDate(campaign.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const permission = getPermissionStatus(campaign.status);
+                          return (
+                            <Badge variant={permission.color}>
+                              {permission.label}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
