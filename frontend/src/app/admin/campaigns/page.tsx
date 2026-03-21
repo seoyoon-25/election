@@ -32,7 +32,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui";
 
@@ -398,14 +397,21 @@ export default function AdminCampaignsPage() {
                         {formatDate(campaign.created_at)}
                       </TableCell>
                       <TableCell>
-                        {(() => {
-                          const permission = getPermissionStatus(campaign.status);
-                          return (
-                            <Badge variant={permission.color}>
-                              {permission.label}
-                            </Badge>
-                          );
-                        })()}
+                        <Select
+                          value={getCurrentPermission(campaign.status)}
+                          onValueChange={(value) => handlePermissionChange(campaign, value)}
+                        >
+                          <SelectTrigger className="w-[100px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {permissionChangeOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -415,20 +421,6 @@ export default function AdminCampaignsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>권한 변경</DropdownMenuLabel>
-                            {permissionChangeOptions
-                              .filter((p) => p.value !== getCurrentPermission(campaign.status))
-                              .map((permission) => (
-                                <DropdownMenuItem
-                                  key={permission.value}
-                                  onClick={() =>
-                                    handlePermissionChange(campaign, permission.value)
-                                  }
-                                >
-                                  {permission.label}로 변경
-                                </DropdownMenuItem>
-                              ))}
-                            <DropdownMenuSeparator />
                             <DropdownMenuLabel>상태 변경</DropdownMenuLabel>
                             {statusOptions
                               .filter((s) => s.value && s.value !== "all" && s.value !== campaign.status)
