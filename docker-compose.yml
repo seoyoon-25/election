@@ -65,7 +65,11 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://election.bestcome.org/api/v1
+        NEXT_PUBLIC_SITE_URL: https://election.bestcome.org
+        NEXT_PUBLIC_APP_NAME: Campaign OS
     container_name: campaign-os-frontend
     restart: unless-stopped
     environment:
@@ -75,10 +79,6 @@ services:
       PORT: 3001
     ports:
       - "3001:3001"
-    volumes:
-      # Mount source code for hot-reload during development
-      - ./frontend/src:/app/src:ro
-      - ./frontend/public:/app/public:ro
     depends_on:
       - backend
 

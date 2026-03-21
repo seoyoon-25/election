@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 import secrets
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Enum
 from sqlalchemy.orm import relationship
 import enum
 
@@ -46,10 +46,15 @@ class Invitation(Base):
     # Who invited
     invited_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
-    # Status tracking - using String to avoid SQLAlchemy enum creation issues
+    # Status tracking
     status = Column(
-        String(20),
-        default=InvitationStatus.PENDING.value,
+        Enum(
+            InvitationStatus,
+            values_callable=lambda x: [e.value for e in x],
+            name="invitationstatus",
+            create_constraint=False,
+        ),
+        default=InvitationStatus.PENDING,
         server_default='pending',
         nullable=False
     )

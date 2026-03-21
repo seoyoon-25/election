@@ -28,20 +28,12 @@ echo "PostgreSQL is up!"
 # Wait for Redis to be ready (optional)
 if [ -n "$REDIS_URL" ]; then
     echo "Waiting for Redis..."
+    # Extract host and port from REDIS_URL (format: redis://host:port/db)
+    REDIS_HOST=$(echo "$REDIS_URL" | sed -E 's|redis://([^:]+):([0-9]+).*|\1|')
+    REDIS_PORT=$(echo "$REDIS_URL" | sed -E 's|redis://([^:]+):([0-9]+).*|\2|')
     REDIS_RETRIES=0
     REDIS_MAX_RETRIES=30
-    while ! python -c "
-import redis
-import os
-
-url = os.environ.get('REDIS_URL', '')
-try:
-    client = redis.from_url(url)
-    client.ping()
-    exit(0)
-except:
-    exit(1)
-" 2>/dev/null; do
+    while ! timeout 2 bash -c "echo > /dev/tcp/$REDIS_HOST/$REDIS_PORT" 2>/dev/null; do
         REDIS_RETRIES=$((REDIS_RETRIES + 1))
         if [ $REDIS_RETRIES -ge $REDIS_MAX_RETRIES ]; then
             echo "Warning: Redis is unavailable after $REDIS_MAX_RETRIES retries - continuing without Redis"

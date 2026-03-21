@@ -35,7 +35,7 @@ import {
 } from "@/components/ui";
 
 const statusOptions = [
-  { value: "", label: "전체 상태" },
+  { value: "all", label: "전체 상태" },
   { value: "draft", label: "준비중" },
   { value: "active", label: "활성" },
   { value: "paused", label: "일시정지" },
@@ -67,7 +67,7 @@ export default function AdminCampaignsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [searchInput, setSearchInput] = useState("");
 
   // Status change dialog
@@ -84,7 +84,7 @@ export default function AdminCampaignsPage() {
         page_size: "20",
       });
       if (search) params.append("search", search);
-      if (statusFilter) params.append("status", statusFilter);
+      if (statusFilter && statusFilter !== "all") params.append("status", statusFilter);
 
       const data = await api.get<PaginatedResponse<AdminCampaign>>(
         `/admin/campaigns?${params.toString()}`
