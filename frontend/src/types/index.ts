@@ -108,6 +108,17 @@ export interface CampaignMembership {
   joined_at: string;
 }
 
+// GET /campaigns 응답 타입 (사용자의 캠페인 목록)
+export interface CampaignWithRole {
+  id: number;
+  name: string;
+  slug: string;
+  status: "draft" | "active" | "paused" | "completed" | "archived";
+  role_name: string;
+  role_slug: string;
+  department_name?: string | null;
+}
+
 export interface Role {
   id: number;
   name: string;

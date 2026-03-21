@@ -32,8 +32,10 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
 
     const fetchData = async () => {
       try {
+        const campaignHeaders = { "X-Campaign-ID": campaignId };
+
         const [campaignData, userData] = await Promise.all([
-          api.get<Campaign>(`/campaigns/${campaignId}`),
+          api.get<Campaign>(`/campaigns/${campaignId}`, { headers: campaignHeaders }),
           getCurrentUser(),
         ]);
         setCampaign(campaignData);
@@ -42,7 +44,8 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
         // 사용자의 캠페인 멤버십/권한 정보 조회
         try {
           const membershipRes = await api.get<MembershipWithRole>(
-            `/campaigns/${campaignId}/members/me`
+            `/campaigns/${campaignId}/members/me`,
+            { headers: campaignHeaders }
           );
           setMembership(membershipRes);
         } catch {
@@ -52,7 +55,8 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
         // 결재 대기 건수 조회
         try {
           const approvalsRes = await api.get<{ total: number }>(
-            `/campaigns/${campaignId}/approvals/requests?status=pending&page_size=1`
+            `/campaigns/${campaignId}/approvals/requests?status=pending&page_size=1`,
+            { headers: campaignHeaders }
           );
           setPendingApprovals(approvalsRes.total || 0);
         } catch {

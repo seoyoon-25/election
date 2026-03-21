@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getMyCampaigns, isAuthenticated } from "@/lib/auth";
-import { CampaignMembership } from "@/types";
+import { CampaignWithRole } from "@/types";
 import { Card, CardTitle, Badge, Button } from "@/components/ui";
 import { Header } from "@/components/layout";
 import { ChevronRight, Building2, Plus, Mail } from "lucide-react";
 
 export default function CampaignsPage() {
   const router = useRouter();
-  const [memberships, setMemberships] = useState<CampaignMembership[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -24,7 +24,7 @@ export default function CampaignsPage() {
     const fetchCampaigns = async () => {
       try {
         const data = await getMyCampaigns();
-        setMemberships(data);
+        setCampaigns(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load campaigns");
       } finally {
@@ -66,7 +66,7 @@ export default function CampaignsPage() {
           </div>
         )}
 
-        {memberships.length === 0 ? (
+        {campaigns.length === 0 ? (
           <Card className="p-8 text-center py-12">
             <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-6" />
             <CardTitle className="text-xl">참여 중인 캠프가 없습니다</CardTitle>
@@ -91,10 +91,10 @@ export default function CampaignsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {memberships.map((membership) => (
+            {campaigns.map((campaign) => (
               <Link
-                key={membership.id}
-                href={`/c/${membership.campaign_id}/dashboard`}
+                key={campaign.id}
+                href={`/c/${campaign.id}/dashboard`}
               >
                 <Card className="hover:shadow-md transition-shadow cursor-pointer">
                   <div className="flex items-center justify-between">
@@ -104,12 +104,12 @@ export default function CampaignsPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900">
-                          {membership.campaign.name}
+                          {campaign.name}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="blue">{membership.role.name}</Badge>
-                          {!membership.campaign.is_active && (
-                            <Badge variant="gray">Inactive</Badge>
+                          <Badge variant="blue">{campaign.role_name}</Badge>
+                          {campaign.status !== "active" && (
+                            <Badge variant="gray">{campaign.status}</Badge>
                           )}
                         </div>
                       </div>

@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { AuthTokens, LoginCredentials, User, CampaignMembership } from "@/types";
+import { AuthTokens, LoginCredentials, User, CampaignWithRole } from "@/types";
 
 interface LoginResponse {
   user: User;
@@ -38,8 +38,8 @@ export async function getCurrentUser(): Promise<User> {
   return api.get<User>("/auth/me");
 }
 
-export async function getMyCampaigns(): Promise<CampaignMembership[]> {
-  return api.get<CampaignMembership[]>("/campaigns/memberships/me");
+export async function getMyCampaigns(): Promise<CampaignWithRole[]> {
+  return api.get<CampaignWithRole[]>("/campaigns");
 }
 
 export function isAuthenticated(): boolean {
