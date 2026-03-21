@@ -44,7 +44,7 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
         // 사용자의 캠페인 멤버십/권한 정보 조회
         try {
           const membershipRes = await api.get<MembershipWithRole>(
-            `/campaigns/${campaignId}/members/me`,
+            `/members/me`,
             { headers: campaignHeaders }
           );
           setMembership(membershipRes);
@@ -55,7 +55,7 @@ export default function CampaignLayout({ children }: CampaignLayoutProps) {
         // 결재 대기 건수 조회
         try {
           const approvalsRes = await api.get<{ total: number }>(
-            `/campaigns/${campaignId}/approvals/requests?status=pending&page_size=1`,
+            `/approvals/requests?status=pending&page_size=1`,
             { headers: campaignHeaders }
           );
           setPendingApprovals(approvalsRes.total || 0);

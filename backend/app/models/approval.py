@@ -245,7 +245,7 @@ class ApprovalRequest(Base, TimestampMixin, TenantMixin):
         nullable=False,
     )
     status: Mapped[ApprovalStatus] = mapped_column(
-        Enum(ApprovalStatus),
+        Enum(ApprovalStatus, values_callable=lambda x: [e.value for e in x]),
         default=ApprovalStatus.PENDING,
         nullable=False,
         index=True,
@@ -346,7 +346,7 @@ class ApprovalRequestStep(Base, TimestampMixin):
         nullable=False,
     )
     status: Mapped[ApprovalStatus] = mapped_column(
-        Enum(ApprovalStatus),
+        Enum(ApprovalStatus, values_callable=lambda x: [e.value for e in x]),
         default=ApprovalStatus.PENDING,
         nullable=False,
     )
