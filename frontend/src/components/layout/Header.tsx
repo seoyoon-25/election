@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { LogOut, User, Menu, X, Home, LayoutDashboard, ClipboardList, Calendar, FileText, Users, Settings, Shield } from "lucide-react";
@@ -19,6 +19,11 @@ export function Header({ user }: HeaderProps) {
   const campaignId = params?.campaignId as string;
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -59,11 +64,14 @@ export function Header({ user }: HeaderProps) {
             </Button>
           )}
 
-          <h1 className="text-xl font-semibold text-gray-900">
-            {process.env.NEXT_PUBLIC_APP_NAME || "Campaign OS"}
-          </h1>
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <Shield className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <h1 className="text-xl font-semibold text-gray-900">캠프보드</h1>
+          </Link>
 
-          {user && (
+          {mounted && user && (
             <div className="flex items-center gap-2 md:gap-4">
               {user.is_superadmin && (
                 <Link href="/admin">
@@ -92,7 +100,7 @@ export function Header({ user }: HeaderProps) {
       </header>
 
       {/* 모바일 네비게이션 메뉴 */}
-      {mobileMenuOpen && campaignId && (
+      {mounted && mobileMenuOpen && campaignId && (
         <nav className="md:hidden bg-white border-b shadow-sm" aria-label="모바일 메뉴">
           <div className="px-4 py-2 space-y-1">
             {mobileNavItems.map((item) => {

@@ -122,13 +122,13 @@ class AuthService:
         if existing_user:
             raise EmailAlreadyExistsError()
 
-        # Create new user
+        # Create new user (inactive until admin approval)
         user = User(
             email=data.email.lower(),
             password_hash=hash_password(data.password),
             full_name=data.full_name,
             phone=data.phone,
-            is_active=True,
+            is_active=False,  # Requires admin approval
             is_superadmin=False,
         )
 

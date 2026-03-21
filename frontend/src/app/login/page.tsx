@@ -37,8 +37,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_state: "인증 세션이 만료되었습니다. 다시 시도해주세요.",
   oauth_failed: "Google 인증에 실패했습니다. 다시 시도해주세요.",
   email_required: "이메일 정보를 가져올 수 없습니다.",
-  account_disabled: "비활성화된 계정입니다. 관리자에게 문의하세요.",
+  account_disabled: "계정 승인 대기 중입니다. 관리자의 승인을 기다려주세요.",
   invitation_required: "초대받은 사용자만 가입할 수 있습니다.",
+  pending_approval: "계정 승인 대기 중입니다. 관리자의 승인 후 로그인할 수 있습니다.",
 };
 
 function LoginForm() {
@@ -72,9 +73,35 @@ function LoginForm() {
 
     try {
       await login({ email, password });
-      router.push("/campaigns");
+
+      // Check if user is active
+      const userResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        }
+      );
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        if (userData.is_active) {
+          router.push("/campaigns");
+        } else {
+          router.push("/pending-approval");
+        }
+      } else {
+        router.push("/campaigns");
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "로그인에 실패했습니다");
+      const errorMessage = err instanceof Error ? err.message : "로그인에 실패했습니다";
+      // Handle inactive user error from backend
+      if (errorMessage.toLowerCase().includes("inactive")) {
+        setError(ERROR_MESSAGES.pending_approval);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

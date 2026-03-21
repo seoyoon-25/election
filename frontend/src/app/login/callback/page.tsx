@@ -9,20 +9,46 @@ function CallbackHandler() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const accessToken = searchParams.get("access_token");
-    const refreshToken = searchParams.get("refresh_token");
+    const handleCallback = async () => {
+      const accessToken = searchParams.get("access_token");
+      const refreshToken = searchParams.get("refresh_token");
 
-    if (accessToken && refreshToken) {
-      // Store tokens
-      api.setToken(accessToken);
-      api.setRefreshToken(refreshToken);
+      if (accessToken && refreshToken) {
+        // Store tokens
+        api.setToken(accessToken);
+        api.setRefreshToken(refreshToken);
 
-      // Redirect to campaigns
-      router.replace("/campaigns");
-    } else {
-      // No tokens - redirect to login with error
-      router.replace("/login?error=oauth_failed");
-    }
+        // Check if user is active
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            const user = await response.json();
+            if (user.is_active) {
+              router.replace("/campaigns");
+            } else {
+              router.replace("/pending-approval");
+            }
+          } else {
+            router.replace("/campaigns");
+          }
+        } catch {
+          router.replace("/campaigns");
+        }
+      } else {
+        // No tokens - redirect to login with error
+        router.replace("/login?error=oauth_failed");
+      }
+    };
+
+    handleCallback();
   }, [router, searchParams]);
 
   return (

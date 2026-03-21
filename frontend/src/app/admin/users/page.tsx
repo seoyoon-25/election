@@ -57,7 +57,7 @@ export default function AdminUsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
   const [searchInput, setSearchInput] = useState("");
 
   // User detail sheet
@@ -73,7 +73,7 @@ export default function AdminUsersPage() {
         page_size: "20",
       });
       if (search) params.append("search", search);
-      if (activeFilter !== "") params.append("is_active", activeFilter);
+      if (activeFilter && activeFilter !== "all") params.append("is_active", activeFilter);
 
       const data = await api.get<PaginatedResponse<AdminUser>>(
         `/admin/users?${params.toString()}`
@@ -109,6 +109,20 @@ export default function AdminUsersPage() {
       setDetailOpen(false);
     } finally {
       setLoadingDetail(false);
+    }
+  };
+
+  const handleToggleActive = async (userId: number, isActive: boolean) => {
+    try {
+      await api.patch(`/admin/users/${userId}/activate?is_active=${isActive}`);
+      // Refresh the users list
+      fetchUsers();
+      // If viewing detail, refresh it too
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser({ ...selectedUser, is_active: isActive });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "상태 변경에 실패했습니다");
     }
   };
 
@@ -211,7 +225,7 @@ export default function AdminUsersPage() {
                   <SelectValue placeholder="전체 상태" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">전체</SelectItem>
+                  <SelectItem value="all">전체</SelectItem>
                   <SelectItem value="true">활성</SelectItem>
                   <SelectItem value="false">비활성</SelectItem>
                 </SelectContent>
@@ -277,9 +291,11 @@ export default function AdminUsersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <Badge variant={user.is_active ? "green" : "gray"}>
-                            {user.is_active ? "활성" : "비활성"}
-                          </Badge>
+                          {user.is_active ? (
+                            <Badge variant="green">활성</Badge>
+                          ) : (
+                            <Badge variant="yellow">승인 대기</Badge>
+                          )}
                           {user.is_email_verified ? (
                             <span className="text-xs text-green-600 flex items-center gap-1">
                               <CheckCircle className="h-3 w-3" /> 이메일 인증됨
@@ -302,13 +318,36 @@ export default function AdminUsersPage() {
                         {formatDate(user.created_at)}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewUser(user.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {!user.is_active && !user.is_superadmin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => handleToggleActive(user.id, true)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              승인
+                            </Button>
+                          )}
+                          {user.is_active && !user.is_superadmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-gray-500 hover:text-red-600"
+                              onClick={() => handleToggleActive(user.id, false)}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewUser(user.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -387,9 +426,25 @@ export default function AdminUsersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">상태</p>
-                  <Badge variant={selectedUser.is_active ? "green" : "gray"}>
-                    {selectedUser.is_active ? "활성" : "비활성"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {selectedUser.is_active ? (
+                      <Badge variant="green">활성</Badge>
+                    ) : (
+                      <Badge variant="yellow">승인 대기</Badge>
+                    )}
+                    {!selectedUser.is_superadmin && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={selectedUser.is_active
+                          ? "text-red-600 hover:text-red-700"
+                          : "text-green-600 hover:text-green-700"}
+                        onClick={() => handleToggleActive(selectedUser.id, !selectedUser.is_active)}
+                      >
+                        {selectedUser.is_active ? "비활성화" : "승인"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">이메일 인증</p>

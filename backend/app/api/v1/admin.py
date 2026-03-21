@@ -699,6 +699,59 @@ async def update_user_role(
     )
 
 
+@router.patch(
+    "/users/{user_id}/activate",
+    response_model=AdminUserItem,
+    summary="사용자 활성화/비활성화",
+    description="사용자 계정을 활성화하거나 비활성화합니다",
+)
+async def toggle_user_active(
+    user_id: int,
+    db: DB,
+    admin: SuperAdmin,
+    is_active: bool = Query(..., description="활성화 여부"),
+):
+    """Toggle user active status (approve/deactivate user)."""
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.memberships))
+        .where(User.id == user_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="사용자를 찾을 수 없습니다",
+        )
+
+    # Prevent deactivating superadmin by non-superadmin (extra safety)
+    if user.is_superadmin and not is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="슈퍼관리자는 비활성화할 수 없습니다",
+        )
+
+    user.is_active = is_active
+    user.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(user)
+
+    return AdminUserItem(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        phone=user.phone,
+        avatar_url=user.avatar_url,
+        is_active=user.is_active,
+        is_superadmin=user.is_superadmin,
+        is_email_verified=user.email_verified_at is not None,
+        campaign_count=sum(1 for m in user.memberships if m.is_active),
+        last_login_at=user.last_login_at,
+        created_at=user.created_at,
+    )
+
+
 @router.get(
     "/users/export",
     summary="사용자 CSV 내보내기",
