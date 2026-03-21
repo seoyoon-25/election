@@ -43,6 +43,20 @@ const statusOptions = [
   { value: "archived", label: "보관" },
 ];
 
+const permissionOptions = [
+  { value: "all", label: "전체 권한" },
+  { value: "pending", label: "승인대기" },
+  { value: "active", label: "활동중" },
+  { value: "ended", label: "종료" },
+];
+
+// 권한 값에 해당하는 상태 목록
+const permissionToStatuses: Record<string, string[]> = {
+  pending: ["draft"],
+  active: ["active", "paused"],
+  ended: ["completed", "archived"],
+};
+
 const statusLabels: Record<string, string> = {
   draft: "준비중",
   active: "활성",
@@ -84,6 +98,7 @@ export default function AdminCampaignsPage() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [permissionFilter, setPermissionFilter] = useState("all");
   const [searchInput, setSearchInput] = useState("");
 
   // Status change dialog
@@ -100,7 +115,16 @@ export default function AdminCampaignsPage() {
         page_size: "20",
       });
       if (search) params.append("search", search);
-      if (statusFilter && statusFilter !== "all") params.append("status", statusFilter);
+
+      // 권한 필터가 설정된 경우 해당하는 상태들로 필터링
+      if (permissionFilter && permissionFilter !== "all") {
+        const statuses = permissionToStatuses[permissionFilter];
+        if (statuses) {
+          statuses.forEach(s => params.append("status", s));
+        }
+      } else if (statusFilter && statusFilter !== "all") {
+        params.append("status", statusFilter);
+      }
 
       const data = await api.get<PaginatedResponse<AdminCampaign>>(
         `/admin/campaigns?${params.toString()}`
@@ -113,7 +137,7 @@ export default function AdminCampaignsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, permissionFilter]);
 
   useEffect(() => {
     fetchCampaigns();
@@ -218,12 +242,30 @@ export default function AdminCampaignsPage() {
               </Button>
             </form>
 
-            <div className="flex gap-2 items-center">
-              <Select value={statusFilter} onValueChange={(value) => {
-                setStatusFilter(value);
+            <div className="flex gap-2 items-center flex-wrap">
+              <Select value={permissionFilter} onValueChange={(value) => {
+                setPermissionFilter(value);
+                if (value !== "all") setStatusFilter("all");
                 setPage(1);
               }}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="전체 권한" />
+                </SelectTrigger>
+                <SelectContent>
+                  {permissionOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={(value) => {
+                setStatusFilter(value);
+                if (value !== "all") setPermissionFilter("all");
+                setPage(1);
+              }}>
+                <SelectTrigger className="w-[130px]">
                   <SelectValue placeholder="전체 상태" />
                 </SelectTrigger>
                 <SelectContent>

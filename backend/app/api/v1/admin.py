@@ -6,7 +6,7 @@ Requires is_superadmin = True on the user.
 """
 
 from datetime import datetime, timezone, timedelta
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func, and_, or_
@@ -120,7 +120,7 @@ async def list_campaigns(
     page: int = Query(1, ge=1, description="페이지 번호"),
     page_size: int = Query(20, ge=1, le=100, description="페이지당 항목 수"),
     search: Optional[str] = Query(None, description="검색어 (이름, 설명)"),
-    status: Optional[CampaignStatus] = Query(None, description="상태 필터"),
+    status: Optional[List[CampaignStatus]] = Query(None, description="상태 필터 (복수 선택 가능)"),
 ):
     """List all campaigns with pagination and filters."""
     query = select(Campaign).options(
@@ -139,7 +139,10 @@ async def list_campaigns(
             )
         )
     if status:
-        conditions.append(Campaign.status == status)
+        if len(status) == 1:
+            conditions.append(Campaign.status == status[0])
+        else:
+            conditions.append(Campaign.status.in_(status))
 
     if conditions:
         query = query.where(and_(*conditions))
