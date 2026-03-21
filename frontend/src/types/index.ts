@@ -111,7 +111,32 @@ export interface CampaignMembership {
 export interface Role {
   id: number;
   name: string;
+  slug: string;
+  is_system: boolean;
   permissions: string[];
+}
+
+export interface MembershipWithRole {
+  id: number;
+  user: {
+    id: number;
+    email: string;
+    full_name: string;
+    avatar_url?: string;
+  };
+  role: Role;
+  department?: {
+    id: number;
+    name: string;
+    slug: string;
+    color: string;
+  } | null;
+  title?: string;
+  is_active: boolean;
+  is_department_head: boolean;
+  joined_at: string;
+  is_owner: boolean;
+  is_admin: boolean;
 }
 
 // Task Types

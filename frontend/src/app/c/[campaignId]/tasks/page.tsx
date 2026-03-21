@@ -11,6 +11,8 @@ import {
   TaskListView,
   TaskFilters,
 } from "@/components/tasks";
+import { PermissionGate } from "@/components/common";
+import { PERMISSIONS } from "@/lib/constants";
 
 type ViewMode = "board" | "list" | "timeline";
 type Priority = "low" | "medium" | "high" | "urgent";
@@ -146,10 +148,12 @@ export default function TasksPage() {
             팀의 모든 태스크를 관리하세요
           </p>
         </div>
-        <Button onClick={() => handleAddTask()}>
-          <Plus className="h-4 w-4 mr-2" />
-          새 태스크
-        </Button>
+        <PermissionGate permission={PERMISSIONS.TASK_CREATE}>
+          <Button onClick={() => handleAddTask()}>
+            <Plus className="h-4 w-4 mr-2" />
+            새 태스크
+          </Button>
+        </PermissionGate>
       </div>
 
       {/* 필터 */}

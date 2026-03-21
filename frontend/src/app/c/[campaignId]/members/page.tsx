@@ -7,7 +7,8 @@ import { CampaignMembership } from "@/types";
 import { Card, CardTitle, Badge, Button } from "@/components/ui";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
 import { UserPlus, Users, Mail } from "lucide-react";
-import { ErrorState } from "@/components/common/ErrorState";
+import { ErrorState, PermissionGate } from "@/components/common";
+import { PERMISSIONS } from "@/lib/constants";
 
 interface MemberWithUser extends CampaignMembership {
   user: {
@@ -69,10 +70,12 @@ export default function MembersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">팀 멤버</h1>
-        <Button>
-          <UserPlus className="h-4 w-4 mr-1" />
-          멤버 초대
-        </Button>
+        <PermissionGate permission={PERMISSIONS.CAMPAIGN_MANAGE_MEMBERS}>
+          <Button>
+            <UserPlus className="h-4 w-4 mr-1" />
+            멤버 초대
+          </Button>
+        </PermissionGate>
       </div>
 
       {members.length === 0 ? (
@@ -92,7 +95,9 @@ export default function MembersPage() {
                   <TableHead>멤버</TableHead>
                   <TableHead>역할</TableHead>
                   <TableHead>이메일</TableHead>
-                  <TableHead>관리</TableHead>
+                  <PermissionGate permission={PERMISSIONS.CAMPAIGN_MANAGE_MEMBERS}>
+                    <TableHead>관리</TableHead>
+                  </PermissionGate>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -125,11 +130,13 @@ export default function MembersPage() {
                         {member.user.email}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button variant="secondary" size="sm">
-                        역할 변경
-                      </Button>
-                    </TableCell>
+                    <PermissionGate permission={PERMISSIONS.CAMPAIGN_MANAGE_MEMBERS}>
+                      <TableCell>
+                        <Button variant="secondary" size="sm">
+                          역할 변경
+                        </Button>
+                      </TableCell>
+                    </PermissionGate>
                   </TableRow>
                 ))}
               </TableBody>

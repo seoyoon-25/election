@@ -104,6 +104,7 @@ async def list_members(
                 name=m.role.name,
                 slug=m.role.slug,
                 is_system=m.role.is_system,
+                permissions=m.role.permissions or [],
             ),
             department=DepartmentBrief(
                 id=m.department.id,
@@ -168,6 +169,7 @@ async def get_my_membership(
             name=m.role.name,
             slug=m.role.slug,
             is_system=m.role.is_system,
+            permissions=m.role.permissions or [],
         ),
         department=DepartmentBrief(
             id=m.department.id,
@@ -229,6 +231,7 @@ async def get_member(
             name=m.role.name,
             slug=m.role.slug,
             is_system=m.role.is_system,
+            permissions=m.role.permissions or [],
         ),
         department=DepartmentBrief(
             id=m.department.id,
@@ -377,6 +380,7 @@ async def update_member(
             name=m.role.name,
             slug=m.role.slug,
             is_system=m.role.is_system,
+            permissions=m.role.permissions or [],
         ),
         department=DepartmentBrief(
             id=m.department.id,
@@ -596,6 +600,7 @@ async def invite_member(
             name=m.role.name,
             slug=m.role.slug,
             is_system=m.role.is_system,
+            permissions=m.role.permissions or [],
         ),
         department=DepartmentBrief(
             id=m.department.id,

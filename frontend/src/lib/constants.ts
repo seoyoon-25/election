@@ -35,79 +35,60 @@ export const ROLE_DESCRIPTIONS: Record<RoleSlug, string> = {
   [ROLES.STAFF]: "일반 참여자",
 };
 
-// 권한 정의
+// 권한 정의 (백엔드 Permission enum과 동기화)
 export const PERMISSIONS = {
-  // 멤버 관리
-  MEMBERS_READ: "members:read",
-  MEMBERS_INVITE: "members:invite",
-  MEMBERS_UPDATE: "members:update",
-  MEMBERS_REMOVE: "members:remove",
-  // 태스크
-  TASKS_READ: "tasks:read",
-  TASKS_CREATE: "tasks:create",
-  TASKS_UPDATE: "tasks:update",
-  TASKS_DELETE: "tasks:delete",
-  TASKS_ASSIGN: "tasks:assign",
-  // 승인
-  APPROVALS_READ: "approvals:read",
-  APPROVALS_CREATE: "approvals:create",
-  APPROVALS_APPROVE: "approvals:approve",
-  // 일정
-  CALENDAR_READ: "calendar:read",
-  CALENDAR_CREATE: "calendar:create",
-  CALENDAR_UPDATE: "calendar:update",
-  // 설정
-  SETTINGS_READ: "settings:read",
-  SETTINGS_UPDATE: "settings:update",
+  // Campaign management
+  CAMPAIGN_VIEW: "campaign:view",
+  CAMPAIGN_EDIT: "campaign:edit",
+  CAMPAIGN_MANAGE_MEMBERS: "campaign:manage_members",
+  CAMPAIGN_MANAGE_ROLES: "campaign:manage_roles",
+  CAMPAIGN_DELETE: "campaign:delete",
+
+  // Department management
+  DEPARTMENT_VIEW: "department:view",
+  DEPARTMENT_CREATE: "department:create",
+  DEPARTMENT_EDIT: "department:edit",
+  DEPARTMENT_DELETE: "department:delete",
+
+  // Task management
+  TASK_VIEW_ALL: "task:view_all",
+  TASK_VIEW_DEPARTMENT: "task:view_department",
+  TASK_CREATE: "task:create",
+  TASK_EDIT_OWN: "task:edit_own",
+  TASK_EDIT_ALL: "task:edit_all",
+  TASK_DELETE: "task:delete",
+  TASK_ASSIGN: "task:assign",
+
+  // Board management
+  BOARD_CREATE: "board:create",
+  BOARD_EDIT: "board:edit",
+  BOARD_DELETE: "board:delete",
+
+  // Approval workflow
+  APPROVAL_REQUEST: "approval:request",
+  APPROVAL_DECIDE: "approval:decide",
+  APPROVAL_MANAGE_WORKFLOWS: "approval:manage_workflows",
+
+  // Calendar/Events
+  EVENT_VIEW: "event:view",
+  EVENT_CREATE: "event:create",
+  EVENT_EDIT_OWN: "event:edit_own",
+  EVENT_EDIT_ALL: "event:edit_all",
+  EVENT_DELETE: "event:delete",
+
+  // Files/Attachments
+  FILE_UPLOAD: "file:upload",
+  FILE_DELETE_OWN: "file:delete_own",
+  FILE_DELETE_ALL: "file:delete_all",
+
+  // Notifications/Webhooks
+  WEBHOOK_MANAGE: "webhook:manage",
+
+  // Audit
+  AUDIT_VIEW: "audit:view",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
-
-// 역할별 기본 권한
-export const ROLE_PERMISSIONS: Record<RoleSlug, Permission[]> = {
-  [ROLES.ADMIN]: Object.values(PERMISSIONS),
-  [ROLES.GENERAL_AFFAIRS]: [
-    PERMISSIONS.MEMBERS_READ,
-    PERMISSIONS.MEMBERS_INVITE,
-    PERMISSIONS.MEMBERS_UPDATE,
-    PERMISSIONS.TASKS_READ,
-    PERMISSIONS.TASKS_CREATE,
-    PERMISSIONS.TASKS_UPDATE,
-    PERMISSIONS.TASKS_ASSIGN,
-    PERMISSIONS.APPROVALS_READ,
-    PERMISSIONS.APPROVALS_CREATE,
-    PERMISSIONS.APPROVALS_APPROVE,
-    PERMISSIONS.CALENDAR_READ,
-    PERMISSIONS.CALENDAR_CREATE,
-    PERMISSIONS.CALENDAR_UPDATE,
-    PERMISSIONS.SETTINGS_READ,
-  ],
-  [ROLES.POLICY]: [
-    PERMISSIONS.MEMBERS_READ,
-    PERMISSIONS.TASKS_READ,
-    PERMISSIONS.TASKS_CREATE,
-    PERMISSIONS.TASKS_UPDATE,
-    PERMISSIONS.APPROVALS_READ,
-    PERMISSIONS.APPROVALS_CREATE,
-    PERMISSIONS.CALENDAR_READ,
-  ],
-  [ROLES.COMMUNICATIONS]: [
-    PERMISSIONS.MEMBERS_READ,
-    PERMISSIONS.TASKS_READ,
-    PERMISSIONS.TASKS_CREATE,
-    PERMISSIONS.TASKS_UPDATE,
-    PERMISSIONS.CALENDAR_READ,
-    PERMISSIONS.CALENDAR_CREATE,
-    PERMISSIONS.CALENDAR_UPDATE,
-  ],
-  [ROLES.STAFF]: [
-    PERMISSIONS.MEMBERS_READ,
-    PERMISSIONS.TASKS_READ,
-    PERMISSIONS.TASKS_CREATE,
-    PERMISSIONS.APPROVALS_READ,
-    PERMISSIONS.CALENDAR_READ,
-  ],
-};
 
 // 권한 체크 유틸
 export function hasPermission(

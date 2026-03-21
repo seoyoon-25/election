@@ -19,7 +19,8 @@ import {
   AlertDialogTrigger,
   useToast,
 } from "@/components/ui";
-import { StatusBadge } from "@/components/common";
+import { StatusBadge, PermissionGate } from "@/components/common";
+import { PERMISSIONS } from "@/lib/constants";
 import { Check, X, Clock } from "lucide-react";
 import { ko } from "date-fns/locale";
 import { format } from "date-fns";
@@ -180,67 +181,69 @@ export default function ApprovalsPage() {
                 </div>
 
                 {request.status === "pending" && (
-                  <div className="flex items-center gap-2">
-                    {/* 반려 확인 다이얼로그 */}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          disabled={processingId === request.id}
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          반려
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>결재 반려</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            이 결재 요청을 반려하시겠습니까? 이 작업은 취소할 수 없습니다.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>취소</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleReject(request.id)}
-                            className="bg-red-600 hover:bg-red-700"
+                  <PermissionGate permission={PERMISSIONS.APPROVAL_DECIDE}>
+                    <div className="flex items-center gap-2">
+                      {/* 반려 확인 다이얼로그 */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={processingId === request.id}
                           >
+                            <X className="h-4 w-4 mr-1" />
                             반려
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>결재 반려</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              이 결재 요청을 반려하시겠습니까? 이 작업은 취소할 수 없습니다.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>취소</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleReject(request.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              반려
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
 
-                    {/* 승인 확인 다이얼로그 */}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          disabled={processingId === request.id}
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          승인
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>결재 승인</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            이 결재 요청을 승인하시겠습니까?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>취소</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleApprove(request.id)}
+                      {/* 승인 확인 다이얼로그 */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            disabled={processingId === request.id}
                           >
+                            <Check className="h-4 w-4 mr-1" />
                             승인
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>결재 승인</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              이 결재 요청을 승인하시겠습니까?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>취소</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleApprove(request.id)}
+                            >
+                              승인
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </PermissionGate>
                 )}
               </div>
             </Card>

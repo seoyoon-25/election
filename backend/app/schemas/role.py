@@ -48,6 +48,7 @@ class RoleBrief(BaseSchema):
     name: str
     slug: str
     is_system: bool
+    permissions: list[str] = []
 
 
 class PermissionInfo(BaseSchema):

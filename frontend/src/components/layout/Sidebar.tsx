@@ -24,24 +24,27 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { useOptionalPermission, PERMISSIONS } from "@/contexts/PermissionContext";
 
 interface SidebarProps {
   campaignId: string;
-  userRole?: string;
   pendingApprovals?: number;
 }
 
 export function Sidebar({
   campaignId,
-  userRole = "member",
   pendingApprovals = 0,
 }: SidebarProps) {
   const pathname = usePathname();
   const basePath = `/c/${campaignId}`;
+  const permission = useOptionalPermission();
 
   const isActive = (path: string) => pathname === path;
 
-  const canManage = ["admin", "general_affairs"].includes(userRole);
+  // 권한 기반 체크
+  const canManageMembers = permission?.canManageMembers || false;
+  const canManageSettings = permission?.canManageSettings || false;
+  const canManage = canManageMembers || canManageSettings;
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-60 border-r bg-card">
@@ -149,7 +152,7 @@ export function Sidebar({
           </Collapsible>
         </div>
 
-        {/* 관리 섹션 - 관리자만 */}
+        {/* 관리 섹션 - 권한 있는 경우만 */}
         {canManage && (
           <>
             <Separator className="my-2" />
@@ -167,18 +170,22 @@ export function Sidebar({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <nav className="space-y-1 mt-1">
-                    <NavItem
-                      href={`${basePath}/settings/members`}
-                      icon={<Users className="h-4 w-4" />}
-                      label="팀원 관리"
-                      isActive={isActive(`${basePath}/settings/members`)}
-                    />
-                    <NavItem
-                      href={`${basePath}/settings`}
-                      icon={<Settings className="h-4 w-4" />}
-                      label="캠페인 설정"
-                      isActive={isActive(`${basePath}/settings`)}
-                    />
+                    {canManageMembers && (
+                      <NavItem
+                        href={`${basePath}/settings/members`}
+                        icon={<Users className="h-4 w-4" />}
+                        label="팀원 관리"
+                        isActive={isActive(`${basePath}/settings/members`)}
+                      />
+                    )}
+                    {canManageSettings && (
+                      <NavItem
+                        href={`${basePath}/settings`}
+                        icon={<Settings className="h-4 w-4" />}
+                        label="캠페인 설정"
+                        isActive={isActive(`${basePath}/settings`)}
+                      />
+                    )}
                   </nav>
                 </CollapsibleContent>
               </Collapsible>

@@ -10,3 +10,14 @@ export {
   CardSkeleton,
   TaskCardSkeleton,
 } from "./LoadingState";
+export {
+  PermissionGate,
+  OwnerGate,
+  AdminGate,
+  DepartmentHeadGate,
+} from "./PermissionGate";
+export {
+  RequirePermission,
+  RequireAdmin,
+  RequireOwner,
+} from "./RequirePermission";
