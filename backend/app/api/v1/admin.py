@@ -123,7 +123,9 @@ async def list_campaigns(
     status: Optional[CampaignStatus] = Query(None, description="상태 필터"),
 ):
     """List all campaigns with pagination and filters."""
-    query = select(Campaign).options(selectinload(Campaign.memberships))
+    query = select(Campaign).options(
+        selectinload(Campaign.memberships).selectinload(CampaignMembership.role)
+    )
 
     # Apply filters
     conditions = []
